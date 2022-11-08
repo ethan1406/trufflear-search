@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package influencer;
+
+import "com/trufflear/search/influencer/influencer_profile.proto";
+
+option java_multiple_files = true;
+option java_package = "com.trufflear.search.influencer";
+option java_outer_classname = "GetInfluencerPublicProfileProtos";
+
+service InfluencerPublicProfileService {
+  rpc GetInfluencerPublicProfile(GetInfluencerPublicProfileRequest) returns (GetInfluencerPublicProfileResponse);
+
+}
+
+message GetInfluencerPublicProfileRequest {
+  int32 influencer_id = 1;
+}
+
+message GetInfluencerPublicProfileResponse {
+    oneof status {
+      Success success = 1;
+      Error error = 2;
+    }
+
+    message Success {
+      InfluencerProfile influencer_profile = 1;
+    }
+
+    message Error {
+      ErrorType error_type = 1;
+
+      enum ErrorType {
+        UNKNOWN = 0;
+        PROFILE_NOT_LIVE = 1;
+      }
+    }
+}
+

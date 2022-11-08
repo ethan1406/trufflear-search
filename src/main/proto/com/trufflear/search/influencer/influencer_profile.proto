@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package influencer;
+
+option java_multiple_files = true;
+option java_package = "com.trufflear.search.influencer";
+option java_outer_classname = "InfluencerProfileProtos";
+
+message InfluencerProfile {
+  string profile_pic_url = 1;
+  string username = 2;
+  string bio_description = 3;
+  repeated Post posts = 4;
+}
+
+message Post {
+  string thumbnail_url = 1;
+  string link_to_original_post = 2;
+  string snippet = 3;
+}
