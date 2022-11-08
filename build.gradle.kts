@@ -55,8 +55,6 @@ dependencies {
 	implementation("org.bitbucket.b_c:jose4j:0.9.2")
 	implementation ("com.google.code.gson:gson:2.10")
 
-	//implementation(files("libs/typesense-java-0.0.3.jar"))
-
 	testImplementation("org.assertj:assertj-core:3.23.1")
 	testImplementation ("org.junit.jupiter:junit-jupiter-api:5.9.0")
 	testRuntimeOnly ("org.junit.jupiter:junit-jupiter-engine:5.9.0")
