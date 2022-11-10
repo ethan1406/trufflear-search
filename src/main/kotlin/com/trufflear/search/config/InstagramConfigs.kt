@@ -37,6 +37,12 @@ internal object IgMediaFields {
     const val id = "id"
 }
 
+enum class IgMediaType(name: String) {
+    IMAGE("IMAGE"),
+    VIDEO("VIDEO"),
+    CAROUSEL_ALBUM("CAROUSEL_ALBUM");
+}
+
 
 internal object IgCodeGrantType {
     const val authCodeGrantType = "authorization_code"

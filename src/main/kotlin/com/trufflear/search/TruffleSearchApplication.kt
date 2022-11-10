@@ -5,8 +5,10 @@ import com.trufflear.search.config.igGraphSubdomainBaseUrl
 import com.trufflear.search.influencer.AccountInterceptor
 import com.trufflear.search.influencer.InfluencerAccountConnectIgService
 import com.trufflear.search.influencer.InfluencerAccountService
+import com.trufflear.search.influencer.database.scripts.CreateInfluencerScript
 import com.trufflear.search.influencer.network.service.IgAuthService
 import com.trufflear.search.influencer.network.service.IgGraphService
+import com.trufflear.search.influencer.util.CaptionParser
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.grpc.Server
@@ -21,7 +23,8 @@ class TruffleSearchApplication(
     private val port: Int,
     dataSource: DataSource,
     igAuthService: IgAuthService,
-    igGraphService: IgGraphService
+    igGraphService: IgGraphService,
+    captionParser: CaptionParser
 ) {
 
     val server: Server = ServerBuilder
@@ -31,7 +34,7 @@ class TruffleSearchApplication(
         )
         .addService(ServerInterceptors.intercept(
             InfluencerAccountConnectIgService(
-                dataSource, igAuthService, igGraphService
+                dataSource, igAuthService, igGraphService, captionParser
             ), AccountInterceptor())
         )
         .build()
@@ -64,7 +67,16 @@ fun main() {
     //CreateInfluencerScript.createInfluencer(datasource)
 
     val port = System.getenv("PORT")?.toInt() ?: 50051
-    val server = TruffleSearchApplication(port, datasource, igAuthService(), igGraphService())
+    val server = TruffleSearchApplication(
+        port,
+        datasource,
+        igAuthService(),
+        igGraphService(),
+        CaptionParser(
+            hashTagRegex = "(#[a-zA-Z\\d-+_]+)".toRegex(),
+            mentionTagRegex = "(@[a-zA-Z\\d-+_]+)".toRegex(),
+        )
+    )
     server.start()
     server.blockUntilShutdown()
 }
@@ -92,5 +104,6 @@ private fun getHikariDataSource() =
             username = System.getenv("DB_USER")
             password = System.getenv("DB_PASSWORD")
             driverClassName = "com.mysql.cj.jdbc.Driver"
+            addDataSourceProperty("rewriteBatchedStatements", "true")
         }
     )

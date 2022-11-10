@@ -6,10 +6,8 @@ import io.grpc.StatusException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.exceptions.ExposedSQLException
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 import javax.sql.DataSource
 import kotlin.coroutines.coroutineContext
 
@@ -24,7 +22,7 @@ internal class InfluencerAccountService(
         withContext(Dispatchers.IO) {
             try {
                 transaction(Database.connect(dataSource)) {
-                    println("successfully connected to database for signup")
+                    addLogger(StdOutSqlLogger)
 
                     InfluencerDbDto.insert {
                         it[name] = influencer.name
@@ -33,6 +31,9 @@ internal class InfluencerAccountService(
                         it[bioDescription] = ""
                         it[username] = ""
                         it[profileImageUrl] = ""
+                        it[igUserId] = ""
+                        it[igLongLivedAccessToken] = ""
+                        it[igLongLivedAccessTokenExpiresIn] = 0L
                     }
                 }
             } catch (e: ExposedSQLException) {
@@ -57,7 +58,7 @@ internal class InfluencerAccountService(
         withContext(Dispatchers.IO) {
             try {
                 transaction(Database.connect(dataSource)) {
-                    println("successfully connected to database to update bio description")
+                    addLogger(StdOutSqlLogger)
 
                     InfluencerDbDto.update({ InfluencerDbDto.email eq influencer.email}) {
                         it[bioDescription] = request.bioDescription
@@ -79,7 +80,7 @@ internal class InfluencerAccountService(
         withContext(Dispatchers.IO) {
             try {
                 transaction(Database.connect(dataSource)) {
-                    println("successfully connected to database to update username")
+                    addLogger(StdOutSqlLogger)
 
                     InfluencerDbDto.update({ InfluencerDbDto.email eq influencer.email}) {
                         it[username] = request.username

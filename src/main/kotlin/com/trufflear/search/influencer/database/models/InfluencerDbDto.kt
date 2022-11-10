@@ -1,8 +1,8 @@
 package com.trufflear.search.influencer.database.models
 
 import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.javatime.CurrentDateTime
-import org.jetbrains.exposed.sql.javatime.datetime
+import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
+import org.jetbrains.exposed.sql.javatime.timestamp
 
 object InfluencerDbDto: Table("INFLUENCER") {
     val name = varchar("name", 50)
@@ -14,8 +14,7 @@ object InfluencerDbDto: Table("INFLUENCER") {
     val igUserId = varchar("ig_user_id", 50)
     val igLongLivedAccessToken = varchar("ig_long_lived_access_token", 500)
     val igLongLivedAccessTokenExpiresIn = long("ig_long_lived_access_token_expires_in")
-    val igRefreshAccessToken = varchar("ig_refresh_access_token", 500)
-    val dateCreated = datetime("date_created").defaultExpression(CurrentDateTime)
+    val dateCreated = timestamp("date_created").defaultExpression(CurrentTimestamp())
 
     override val primaryKey = PrimaryKey(email)
 }
