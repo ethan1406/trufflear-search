@@ -10,8 +10,8 @@ option java_outer_classname = "InfluencerAccountServiceProtos";
 
 service InfluencerAccountService {
   rpc Signup(SignupRequest) returns (SignupResponse);
-//  rpc UpdateUsername(UpdateUsernameRequest) returns (UpdateUsernameResponse);
-//  rpc UpdateBioDescription(UpdateBioDescriptionRequest) returns (UpdateBioDescriptionResponse);
+  rpc UpdateUsername(UpdateUsernameRequest) returns (UpdateUsernameResponse);
+  rpc UpdateBioDescription(UpdateBioDescriptionRequest) returns (UpdateBioDescriptionResponse);
   rpc GetInstagramConnectUrl(GetInstagramConnectUrlRequest) returns (GetInstagramConnectUrlResponse);
   rpc FetchInstagramUserMedia(FetchInstagramUserMediaRequest) returns (FetchInstagramUserMediaResponse);
   rpc RefetchInstagramUserMedia(RefetchInstagramUserMediaRequest) returns (RefetchInstagramUserMediaResponse);

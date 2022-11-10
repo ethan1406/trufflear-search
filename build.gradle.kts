@@ -45,10 +45,11 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 
-	implementation("org.jetbrains.exposed:exposed-core:0.38.2")
-	implementation("org.jetbrains.exposed:exposed-dao:0.38.2")
-	implementation("org.jetbrains.exposed:exposed-jdbc:0.38.2")
-	implementation("mysql:mysql-connector-java:8.0.29")
+	implementation("org.jetbrains.exposed:exposed-core:0.40.1")
+	implementation("org.jetbrains.exposed:exposed-dao:0.40.1")
+	implementation("org.jetbrains.exposed:exposed-jdbc:0.40.1")
+	implementation("mysql:mysql-connector-java:8.0.30")
+	implementation("org.jetbrains.exposed:exposed-java-time:0.40.1")
 	implementation("com.zaxxer:HikariCP:5.0.1")
 
 	implementation("com.amazonaws:aws-java-sdk-s3:1.12.332")

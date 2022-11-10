@@ -12,14 +12,14 @@ object CreateInfluencerScript {
             addLogger(StdOutSqlLogger)
             SchemaUtils.create(InfluencerDbDto)
 
-            InfluencerDbDto.insert {
-                it[name] = "Ethan Chang"
-                it[email] = "test@gmail.com"
-                it[isEmailVerified] = false
-                it[bioDescription] = "test"
-                it[title] = "test"
-                it[profileImageUrl] = "tst"
-            }
+//            InfluencerDbDto.insert {
+//                it[name] = "Ethan Chang"
+//                it[email] = "test@gmail.com"
+//                it[isEmailVerified] = false
+//                it[bioDescription] = "test"
+//                it[title] = "test"
+//                it[profileImageUrl] = "tst"
+//            }
 
         }
     }

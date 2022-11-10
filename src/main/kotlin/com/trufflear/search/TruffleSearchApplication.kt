@@ -2,6 +2,7 @@ package com.trufflear.search
 
 import com.trufflear.search.influencer.AccountInterceptor
 import com.trufflear.search.influencer.InfluencerAccountService
+import com.trufflear.search.influencer.database.scripts.CreateInfluencerScript
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.grpc.Server
