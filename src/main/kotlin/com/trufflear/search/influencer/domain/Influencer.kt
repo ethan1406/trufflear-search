@@ -1,4 +1,4 @@
-package com.trufflear.search.influencer.domains
+package com.trufflear.search.influencer.domain
 
 data class Influencer(
     val emailVerified: Boolean,

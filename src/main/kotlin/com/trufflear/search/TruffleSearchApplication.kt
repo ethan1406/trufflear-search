@@ -1,25 +1,38 @@
 package com.trufflear.search
 
+import com.trufflear.search.config.igApiSubdomainBaseUrl
+import com.trufflear.search.config.igGraphSubdomainBaseUrl
 import com.trufflear.search.influencer.AccountInterceptor
+import com.trufflear.search.influencer.InfluencerAccountConnectIgService
 import com.trufflear.search.influencer.InfluencerAccountService
-import com.trufflear.search.influencer.database.scripts.CreateInfluencerScript
+import com.trufflear.search.influencer.network.service.IgAuthService
+import com.trufflear.search.influencer.network.service.IgGraphService
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.grpc.ServerInterceptors
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import javax.sql.DataSource
 
 
 class TruffleSearchApplication(
     private val port: Int,
-    dataSource: DataSource
+    dataSource: DataSource,
+    igAuthService: IgAuthService,
+    igGraphService: IgGraphService
 ) {
 
     val server: Server = ServerBuilder
         .forPort(port)
         .addService(ServerInterceptors.intercept(
             InfluencerAccountService(dataSource), AccountInterceptor())
+        )
+        .addService(ServerInterceptors.intercept(
+            InfluencerAccountConnectIgService(
+                dataSource, igAuthService, igGraphService
+            ), AccountInterceptor())
         )
         .build()
 
@@ -45,6 +58,33 @@ class TruffleSearchApplication(
 
 }
 
+fun main() {
+    val datasource = getHikariDataSource()
+
+    //CreateInfluencerScript.createInfluencer(datasource)
+
+    val port = System.getenv("PORT")?.toInt() ?: 50051
+    val server = TruffleSearchApplication(port, datasource, igAuthService(), igGraphService())
+    server.start()
+    server.blockUntilShutdown()
+}
+
+private fun getIgApiSubdomainRetrofit() =
+    Retrofit.Builder()
+        .baseUrl(igApiSubdomainBaseUrl)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+private fun igAuthService() = getIgApiSubdomainRetrofit().create(IgAuthService::class.java)
+
+private fun getIgGraphSubdomainRetrofit() =
+    Retrofit.Builder()
+        .baseUrl(igGraphSubdomainBaseUrl)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+private fun igGraphService() = getIgGraphSubdomainRetrofit().create(IgGraphService::class.java)
+
 private fun getHikariDataSource() =
     HikariDataSource(
         HikariConfig().apply {
@@ -54,14 +94,3 @@ private fun getHikariDataSource() =
             driverClassName = "com.mysql.cj.jdbc.Driver"
         }
     )
-
-fun main() {
-    val datasource = getHikariDataSource()
-
-    //CreateInfluencerScript.createInfluencer(datasource)
-
-    val port = System.getenv("PORT")?.toInt() ?: 50051
-    val server = TruffleSearchApplication(port, datasource)
-    server.start()
-    server.blockUntilShutdown()
-}

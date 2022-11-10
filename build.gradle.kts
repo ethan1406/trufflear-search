@@ -54,6 +54,9 @@ dependencies {
 
 	implementation("com.amazonaws:aws-java-sdk-s3:1.12.332")
 	implementation("org.bitbucket.b_c:jose4j:0.9.2")
+
+	implementation("com.squareup.retrofit2:retrofit:2.9.0")
+	implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
 	implementation ("com.google.code.gson:gson:2.10")
 
 	testImplementation("org.assertj:assertj-core:3.23.1")

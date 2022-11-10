@@ -12,9 +12,6 @@ service InfluencerAccountService {
   rpc Signup(SignupRequest) returns (SignupResponse);
   rpc UpdateUsername(UpdateUsernameRequest) returns (UpdateUsernameResponse);
   rpc UpdateBioDescription(UpdateBioDescriptionRequest) returns (UpdateBioDescriptionResponse);
-  rpc GetInstagramConnectUrl(GetInstagramConnectUrlRequest) returns (GetInstagramConnectUrlResponse);
-  rpc FetchInstagramUserMedia(FetchInstagramUserMediaRequest) returns (FetchInstagramUserMediaResponse);
-  rpc RefetchInstagramUserMedia(RefetchInstagramUserMediaRequest) returns (RefetchInstagramUserMediaResponse);
   rpc GetAccountInfo(GetAccountInfoRequest) returns (GetAccountInfoResponse);
 }
 
@@ -33,25 +30,6 @@ message UpdateBioDescriptionRequest {
 }
 
 message UpdateBioDescriptionResponse {}
-
-message GetInstagramConnectUrlRequest {}
-
-message GetInstagramConnectUrlResponse {
-  string url = 1;
-}
-
-message FetchInstagramUserMediaRequest {
-  string instagram_auth_code = 1;
-  string user_id = 2;
-}
-
-message FetchInstagramUserMediaResponse {}
-
-message RefetchInstagramUserMediaRequest {}
-
-message RefetchInstagramUserMediaResponse {
-  repeated Post posts = 1;
-}
 
 message GetAccountInfoRequest {}
 

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package influencer;
+
+option java_multiple_files = true;
+option java_package = "com.trufflear.search.influencer";
+option java_outer_classname = "InfluencerAccountConnectIgServiceProtos";
+
+service InfluencerAccountConnectIgService {
+  rpc GetIgConnectUrl(GetIgConnectUrlRequest) returns (GetIgConnectUrlResponse);
+  rpc ConnectIgUserMedia(ConnectIgUserMediaRequest) returns (ConnectIgUserMediaResponse);
+  rpc RefreshIgUserMedia(RefreshIgUserMediaRequest) returns (RefreshIgUserMediaResponse);
+}
+
+message GetIgConnectUrlRequest {}
+
+message GetIgConnectUrlResponse {
+  string url = 1;
+}
+
+message ConnectIgUserMediaRequest {
+  string instagram_auth_code = 1;
+}
+
+message ConnectIgUserMediaResponse {}
+
+message RefreshIgUserMediaRequest {}
+
+message RefreshIgUserMediaResponse {}

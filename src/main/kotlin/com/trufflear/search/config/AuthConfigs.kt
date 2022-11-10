@@ -1,4 +1,4 @@
-package com.trufflear.search.configs
+package com.trufflear.search.config
 
 import org.jose4j.jwk.JsonWebKeySet
 

@@ -1,9 +1,9 @@
 package com.trufflear.search.influencer
 
-import com.trufflear.search.configs.audience
-import com.trufflear.search.configs.issuer
-import com.trufflear.search.configs.jsonWebKeySet
-import com.trufflear.search.influencer.domains.Influencer
+import com.trufflear.search.config.audience
+import com.trufflear.search.config.issuer
+import com.trufflear.search.config.jsonWebKeySet
+import com.trufflear.search.influencer.domain.Influencer
 import io.grpc.Metadata
 import io.grpc.ServerCall
 import io.grpc.Status
