@@ -5,6 +5,7 @@ import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mu.KotlinLogging
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -14,6 +15,8 @@ import kotlin.coroutines.coroutineContext
 internal class InfluencerAccountService(
     private val dataSource: DataSource
 ) : InfluencerAccountServiceGrpcKt.InfluencerAccountServiceCoroutineImplBase() {
+
+    private val logger = KotlinLogging.logger {}
 
     override suspend fun signup(request: SignupRequest): SignupResponse {
         val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
@@ -28,20 +31,14 @@ internal class InfluencerAccountService(
                         it[name] = influencer.name
                         it[email] = influencer.email
                         it[isEmailVerified] = influencer.emailVerified
-                        it[bioDescription] = ""
-                        it[username] = ""
-                        it[profileImageUrl] = ""
-                        it[igUserId] = ""
-                        it[igLongLivedAccessToken] = ""
-                        it[igLongLivedAccessTokenExpiresIn] = 0L
                     }
                 }
             } catch (e: ExposedSQLException) {
-                println("error creating user: ${e.message}")
+                logger.error(e) { "error creating user" }
 
                 if (e.sqlState == "23505") {
-                    println("user already exists")
-                    throw StatusException(Status.INVALID_ARGUMENT.withDescription("user already exists"))
+                    logger.error("user already exists")
+                    throw StatusException(Status.ALREADY_EXISTS)
                 }
 
                 throw StatusException(Status.INTERNAL)
@@ -65,7 +62,7 @@ internal class InfluencerAccountService(
                     }
                 }
             } catch (e: ExposedSQLException) {
-                println("error updating bio description: ${e.message}")
+                logger.error(e) { "error updating bio description" }
                 throw StatusException(Status.INTERNAL)
             }
         }

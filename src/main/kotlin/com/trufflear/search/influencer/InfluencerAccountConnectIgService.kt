@@ -18,9 +18,12 @@ import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import mu.KotlinLogging
+import mu.toKLogger
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import retrofit2.HttpException
 import java.lang.Exception
 import java.sql.Timestamp
 import java.time.Instant
@@ -34,6 +37,8 @@ class InfluencerAccountConnectIgService (
     private val captionParser: CaptionParser
 ) : InfluencerAccountConnectIgServiceGrpcKt.InfluencerAccountConnectIgServiceCoroutineImplBase() {
 
+    private val logger = KotlinLogging.logger {}
+
     override suspend fun getIgConnectUrl(request: GetIgConnectUrlRequest): GetIgConnectUrlResponse =
         getIgConnectUrlResponse {
             url = "$igApiSubdomainBaseUrl$authPath?${IgApiParams.clientId}=$clientId&" +
@@ -42,13 +47,16 @@ class InfluencerAccountConnectIgService (
         }
 
     override suspend fun connectIgUserMedia(request: ConnectIgUserMediaRequest): ConnectIgUserMediaResponse {
+        logger.info ("connecting instagram for user")
+
         val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
             ?: throw StatusException(Status.UNAUTHENTICATED)
 
         withContext(Dispatchers.IO) {
-            println("checking if user exists")
-            checkIfUserExist(dataSource, influencer)
             try {
+                logger.info { "checking if user exists" }
+                checkIfUserExist(dataSource, influencer)
+
                 val shortLivedTokenResponse = igAuthService.getShortLivedToken(
                     clientId = clientId,
                     clientSecret = appSecret,
@@ -80,7 +88,7 @@ class InfluencerAccountConnectIgService (
 
                     PostDbDto.batchUpsert(igUserMedia.data) { table, post ->
                         table[igId] = post.id
-                        table[influencerEmail] = ""
+                        table[influencerEmail] = influencer.email
                         table[username] = post.username
                         table[caption] = post.caption
                         table[permalink] = post.permalink
@@ -98,10 +106,13 @@ class InfluencerAccountConnectIgService (
                     }
                 }
             } catch (e: ExposedSQLException) {
-                println("error with database transactions: $e")
+                logger.error(e) { "error with database transaction" }
                 throw StatusException(Status.INTERNAL)
+            } catch (e: HttpException) {
+                logger.error(e) { "error with API calls to Instagram" }
+                throw StatusException(Status.INVALID_ARGUMENT)
             } catch (e: Exception) {
-                println("error with API calls to Instagram: $e")
+                logger.error(e) { "unknown error while connecting instagram" }
                 throw StatusException(Status.INTERNAL)
             }
         }

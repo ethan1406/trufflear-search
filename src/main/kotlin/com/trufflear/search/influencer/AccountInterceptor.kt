@@ -9,6 +9,7 @@ import io.grpc.ServerCall
 import io.grpc.Status
 import io.grpc.StatusException
 import io.grpc.kotlin.CoroutineContextServerInterceptor
+import mu.KotlinLogging
 import org.jose4j.jwa.AlgorithmConstraints
 import org.jose4j.jwk.VerificationJwkSelector
 import org.jose4j.jws.AlgorithmIdentifiers
@@ -29,6 +30,9 @@ data class InfluencerCoroutineElement(val influencer: Influencer): CoroutineCont
 }
 
 class AccountInterceptor: CoroutineContextServerInterceptor() {
+
+    private val logger = KotlinLogging.logger {}
+
     override fun coroutineContext(call: ServerCall<*, *>, headers: Metadata): CoroutineContext {
         val idToken = headers.get(Metadata.Key.of(idTokenKey, Metadata.ASCII_STRING_MARSHALLER))
             ?: throw StatusException(Status.UNAUTHENTICATED)
@@ -48,15 +52,14 @@ class AccountInterceptor: CoroutineContextServerInterceptor() {
 
             verifyClaimsAndGetInfluencer(token, key)
         }.onFailure { throwable ->
-            println("Invalid JWT! $throwable")
+            logger.error(throwable) { "Invalid JWT" }
             if (throwable is InvalidJwtException) {
                 if (throwable.hasExpired()) {
-                    println("JWT expired at " + throwable.jwtContext.jwtClaims.expirationTime)
+                    logger.error("JWT expired at  ${throwable.jwtContext.jwtClaims.expirationTime}")
                 }
                 if (throwable.hasErrorCode(ErrorCodes.AUDIENCE_INVALID)) {
-                    println("JWT had wrong audience: " + throwable.jwtContext.jwtClaims.audience);
+                    logger.error("JWT had wrong audience  ${throwable.jwtContext.jwtClaims.audience}")
                 }
-
             }
         }
     }

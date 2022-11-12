@@ -45,6 +45,8 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 
+	implementation ("io.github.microutils:kotlin-logging-jvm:3.0.2")
+
 	implementation("org.jetbrains.exposed:exposed-core:0.40.1")
 	implementation("org.jetbrains.exposed:exposed-dao:0.40.1")
 	implementation("org.jetbrains.exposed:exposed-jdbc:0.40.1")

@@ -73,8 +73,8 @@ fun main() {
         igAuthService(),
         igGraphService(),
         CaptionParser(
-            hashTagRegex = "(#[a-zA-Z\\d-+_]+)".toRegex(),
-            mentionTagRegex = "(@[a-zA-Z\\d-+_]+)".toRegex(),
+            hashTagRegex = "(#[a-zA-Z\\d-+_.]+)".toRegex(),
+            mentionTagRegex = "(@[a-zA-Z\\d-+_.]+)".toRegex(),
         )
     )
     server.start()
