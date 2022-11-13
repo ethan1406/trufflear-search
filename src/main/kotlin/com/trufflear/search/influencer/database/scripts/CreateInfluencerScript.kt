@@ -11,7 +11,7 @@ object CreateInfluencerScript {
     fun createInfluencer(dataSource: DataSource) {
         transaction (Database.connect(dataSource)){
             addLogger(StdOutSqlLogger)
-            SchemaUtils.create(InfluencerDbDto)
+            //SchemaUtils.create(InfluencerDbDto)
             SchemaUtils.create(PostDbDto)
 
 //            InfluencerDbDto.insert {

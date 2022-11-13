@@ -12,10 +12,10 @@ group = "com.trufflear"
 version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_17
 
-ext["grpcVersion"] = "1.46.0"
+ext["grpcVersion"] = "1.50.2"
 ext["grpcKotlinVersion"] = "1.3.0" // CURRENT_GRPC_KOTLIN_VERSION
-ext["protobufVersion"] = "3.21.0"
-ext["coroutinesVersion"] = "1.6.1"
+ext["protobufVersion"] = "3.21.9"
+ext["coroutinesVersion"] = "1.6.4"
 
 repositories {
 	mavenCentral()
@@ -45,7 +45,9 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 
-	implementation ("io.github.microutils:kotlin-logging-jvm:3.0.2")
+	implementation("org.slf4j:slf4j-api:2.0.3")
+	implementation("org.slf4j:slf4j-log4j12:2.0.3")
+	implementation ("io.github.microutils:kotlin-logging-jvm:3.0.4")
 
 	implementation("org.jetbrains.exposed:exposed-core:0.40.1")
 	implementation("org.jetbrains.exposed:exposed-dao:0.40.1")

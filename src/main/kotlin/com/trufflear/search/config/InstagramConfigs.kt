@@ -37,6 +37,13 @@ internal object IgMediaFields {
     const val id = "id"
 }
 
+internal object IgUserFields {
+    const val accountType = "account_type"
+    const val username = "username"
+    const val mediaCount = "media_count"
+    const val id = "id"
+}
+
 enum class IgMediaType(name: String) {
     IMAGE("IMAGE"),
     VIDEO("VIDEO"),

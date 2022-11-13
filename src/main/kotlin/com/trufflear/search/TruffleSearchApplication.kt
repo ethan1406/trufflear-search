@@ -14,6 +14,7 @@ import com.zaxxer.hikari.HikariDataSource
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.grpc.ServerInterceptors
+import org.apache.log4j.BasicConfigurator
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.sql.DataSource
@@ -66,6 +67,7 @@ fun main() {
 
     //CreateInfluencerScript.createInfluencer(datasource)
 
+    BasicConfigurator.configure()
     val port = System.getenv("PORT")?.toInt() ?: 50051
     val server = TruffleSearchApplication(
         port,

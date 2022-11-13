@@ -18,7 +18,7 @@ message GetInfluencerPublicProfileRequest {
 }
 
 message GetInfluencerPublicProfileResponse {
-    oneof status {
+    oneof state {
       Success success = 1;
       Error error = 2;
     }

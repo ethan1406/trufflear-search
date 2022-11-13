@@ -9,19 +9,18 @@ import com.trufflear.search.config.redirectUri
 import com.trufflear.search.influencer.database.models.InfluencerDbDto
 import com.trufflear.search.influencer.database.models.PostDbDto
 import com.trufflear.search.influencer.domain.Influencer
+import com.trufflear.search.influencer.network.model.IgPost
 import com.trufflear.search.influencer.network.service.IgAuthService
 import com.trufflear.search.influencer.network.service.IgGraphService
 import com.trufflear.search.influencer.util.CaptionParser
-import com.trufflear.search.influencer.util.batchUpsert
 import com.trufflear.search.influencer.util.igDateFormat
 import io.grpc.Status
 import io.grpc.StatusException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import mu.KotlinLogging
-import mu.toKLogger
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.transactions.transaction
 import retrofit2.HttpException
 import java.lang.Exception
@@ -65,59 +64,154 @@ class InfluencerAccountConnectIgService (
                     code = request.instagramAuthCode
                 )
 
-                val longLivedTokenResponse = igGraphService.getLongLivedAccessToken(
-                    clientSecret = appSecret,
-                    grantType = IgCodeGrantType.exchangeTokenType,
-                    accessToken = shortLivedTokenResponse.accessToken
-                )
+                println("asdhfasd: ${shortLivedTokenResponse.accessToken}")
 
-                val igUserMedia = igGraphService.getUserMedia(
-                    userId = shortLivedTokenResponse.userId,
-                    fields = getUserMediaFieldsString(),
-                    accessToken = shortLivedTokenResponse.accessToken
-                )
-
-                transaction(Database.connect(dataSource)) {
-                    addLogger(StdOutSqlLogger)
-
-                    InfluencerDbDto.update({ InfluencerDbDto.email eq influencer.email}) {
-                        it[igUserId] = shortLivedTokenResponse.userId
-                        it[igLongLivedAccessToken] = longLivedTokenResponse.accessToken
-                        it[igLongLivedAccessTokenExpiresIn] = longLivedTokenResponse.expiresIn.toLongOrNull() ?: 0
-                    }
-
-                    PostDbDto.batchUpsert(igUserMedia.data) { table, post ->
-                        table[igId] = post.id
-                        table[influencerEmail] = influencer.email
-                        table[username] = post.username
-                        table[caption] = post.caption
-                        table[permalink] = post.permalink
-                        table[caption] = post.caption
-                        table[hashtags] = captionParser.getHashTags(post.caption)
-                        table[mentions] = captionParser.getMentions(post.caption)
-                        table[mediaType] = post.mediaType
-                        table[mediaUrl] = post.mediaUrl
-                        table[thumbnailUrl] = getCorrectThumbnailUrl(
-                            thumbnailUrl = post.thumbnailUrl,
-                            mediaUrl = post.mediaUrl,
-                            mediaType = post.mediaType
+                listOf(
+                    launch {
+                        fetchAndStoreUserInfoAndToken(
+                            accessToken = shortLivedTokenResponse.accessToken,
+                            instagramUserId = shortLivedTokenResponse.userId,
+                            influencerEmail = influencer.email
                         )
-                        table[createdAtDateTime] = convertIgTimeToInstant(post.timestamp)
+                    },
+                    launch {
+                        fetchAndStoreUserPosts(
+                            accessToken = shortLivedTokenResponse.accessToken,
+                            instagramUserId = shortLivedTokenResponse.userId,
+                            influencerEmail = influencer.email
+                        )
                     }
-                }
+                ).joinAll()
+
             } catch (e: ExposedSQLException) {
                 logger.error(e) { "error with database transaction" }
-                throw StatusException(Status.INTERNAL)
+                throw StatusException(Status.UNKNOWN)
             } catch (e: HttpException) {
                 logger.error(e) { "error with API calls to Instagram" }
-                throw StatusException(Status.INVALID_ARGUMENT)
+                if (e.code() == 403) {
+                    throw StatusException(Status.PERMISSION_DENIED)
+                } else {
+                    throw StatusException(Status.INVALID_ARGUMENT)
+                }
             } catch (e: Exception) {
                 logger.error(e) { "unknown error while connecting instagram" }
-                throw StatusException(Status.INTERNAL)
+                throw StatusException(Status.UNKNOWN)
             }
         }
 
         return connectIgUserMediaResponse { }
+    }
+
+    private suspend fun fetchAndStoreUserInfoAndToken(
+        accessToken: String,
+        instagramUserId: String,
+        influencerEmail: String
+    ) {
+        logger.info ("getting long lived access token for user: $influencerEmail")
+        val longLivedTokenResponse = igGraphService.getLongLivedAccessToken(
+            clientSecret = appSecret,
+            grantType = IgCodeGrantType.exchangeTokenType,
+            accessToken = accessToken
+        )
+
+        logger.info ("getting user info for $influencerEmail")
+        val igUserIndo = igGraphService.getUser(
+            userId = instagramUserId,
+            fields = getUserInfoFieldsString(),
+            accessToken = accessToken
+        )
+        println(igUserIndo)
+
+        transaction(Database.connect(dataSource)) {
+            addLogger(StdOutSqlLogger)
+
+            InfluencerDbDto.update({ InfluencerDbDto.email eq influencerEmail}) {
+                it[igUserId] = instagramUserId
+                it[igLongLivedAccessToken] = longLivedTokenResponse.accessToken
+                it[igLongLivedAccessTokenExpiresIn] = longLivedTokenResponse.expiresIn.toLongOrNull() ?: 0
+                it[igMediaCount] = igUserIndo.mediaCount
+                it[igAccountType] = igUserIndo.accountType
+            }
+
+            InfluencerDbDto.update({ InfluencerDbDto.email eq influencerEmail and (InfluencerDbDto.username eq "") }) {
+                it[username] = igUserIndo.userName
+            }
+        }
+    }
+
+    private suspend fun fetchAndStoreUserPosts(
+        accessToken: String,
+        instagramUserId: String,
+        influencerEmail: String
+    ) {
+        logger.info ("getting user media for $influencerEmail")
+        val igUserMedia = igGraphService.getUserMedia(
+            userId = instagramUserId,
+            fields = getUserMediaFieldsString(),
+            accessToken = accessToken
+        )
+
+        transaction(Database.connect(dataSource)) {
+            addLogger(StdOutSqlLogger)
+
+            val existingPostIgIdSet = PostDbDto.slice(PostDbDto.igId)
+                .select { PostDbDto.influencerEmail eq influencerEmail }
+                .map { it[PostDbDto.igId] }
+                .toHashSet()
+
+            val incomingPosts = igUserMedia.data
+
+            deleteOldPosts(existingPostIgIdSet.minus(incomingPosts.map { it.id }.toHashSet()))
+            insertNewPosts(
+                newPosts = incomingPosts
+                    .filter { existingPostIgIdSet.contains(it.id).not() },
+                influencerEmail = influencerEmail
+            )
+
+            updatePosts(incomingPosts.filter { existingPostIgIdSet.contains(it.id) })
+        }
+    }
+
+    private fun deleteOldPosts(oldPostIgIds: Set<String>) {
+        PostDbDto.deleteWhere { igId inList oldPostIgIds }
+    }
+
+    private fun updatePosts(postsToUpdate: List<IgPost>) {
+        postsToUpdate.forEach { post ->
+            PostDbDto.update({ PostDbDto.igId eq post.id }) {
+                post.caption?.let { cap ->
+                    it[caption] = cap
+                    it[hashtags] = captionParser.getHashTags(cap)
+                    it[mentions] = captionParser.getMentions(cap)
+                }
+                it[permalink] = post.permalink
+            }
+        }
+    }
+
+    private fun insertNewPosts(
+        newPosts: List<IgPost>,
+        influencerEmail: String
+    ){
+        PostDbDto.batchInsert(newPosts) { post ->
+            this[PostDbDto.igId] = post.id
+            this[PostDbDto.influencerEmail] = influencerEmail
+            this[PostDbDto.username] = post.username
+            post.caption?.let {
+                this[PostDbDto.caption] = it
+                this[PostDbDto.hashtags] = captionParser.getHashTags(it)
+                this[PostDbDto.mentions] = captionParser.getMentions(it)
+            }
+            this[PostDbDto.permalink] = post.permalink
+            this[PostDbDto.mediaType] = post.mediaType
+            this[PostDbDto.mediaUrl] = post.mediaUrl
+            this[PostDbDto.thumbnailUrl] = getCorrectThumbnailUrl(
+                thumbnailUrl = post.thumbnailUrl,
+                mediaUrl = post.mediaUrl,
+                mediaType = post.mediaType
+            )
+            this[PostDbDto.createdAtTimestamp] = convertIgTimeToInstant(post.timestamp)
+        }
     }
 
 
@@ -157,6 +251,16 @@ class InfluencerAccountConnectIgService (
         IgMediaFields.username,
         IgMediaFields.permalink,
         IgMediaFields.timestamp
+    ).toString()
+        .replace(" ", "")
+        .replace("[", "")
+        .replace("]", "")
+
+    private fun getUserInfoFieldsString() = listOf(
+        IgUserFields.id,
+        IgUserFields.username,
+        IgUserFields.accountType,
+        IgUserFields.mediaCount
     ).toString()
         .replace(" ", "")
         .replace("[", "")
