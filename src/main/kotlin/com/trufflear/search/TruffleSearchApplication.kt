@@ -8,6 +8,7 @@ import com.trufflear.search.influencer.InfluencerAccountService
 import com.trufflear.search.influencer.database.scripts.CreateInfluencerScript
 import com.trufflear.search.influencer.network.service.IgAuthService
 import com.trufflear.search.influencer.network.service.IgGraphService
+import com.trufflear.search.influencer.network.service.TypeSenseService
 import com.trufflear.search.influencer.util.CaptionParser
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -25,13 +26,14 @@ class TruffleSearchApplication(
     dataSource: DataSource,
     igAuthService: IgAuthService,
     igGraphService: IgGraphService,
-    captionParser: CaptionParser
+    captionParser: CaptionParser,
+    searchIndexService: TypeSenseService
 ) {
 
     val server: Server = ServerBuilder
         .forPort(port)
         .addService(ServerInterceptors.intercept(
-            InfluencerAccountService(dataSource), AccountInterceptor())
+            InfluencerAccountService(dataSource, searchIndexService), AccountInterceptor())
         )
         .addService(ServerInterceptors.intercept(
             InfluencerAccountConnectIgService(
@@ -77,7 +79,8 @@ fun main() {
         CaptionParser(
             hashTagRegex = "(#[a-zA-Z\\d-+_.]+)".toRegex(),
             mentionTagRegex = "(@[a-zA-Z\\d-+_.]+)".toRegex(),
-        )
+        ),
+        TypeSenseService()
     )
     server.start()
     server.blockUntilShutdown()

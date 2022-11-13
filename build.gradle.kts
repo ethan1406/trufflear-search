@@ -34,6 +34,7 @@ sourceSets {
 
 dependencies {
 
+	implementation(files("libs/typesense-java-0.0.3.jar"))
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${rootProject.ext["coroutinesVersion"]}")
 	implementation("io.grpc:grpc-stub:${rootProject.ext["grpcVersion"]}")
@@ -56,7 +57,7 @@ dependencies {
 	implementation("org.jetbrains.exposed:exposed-java-time:0.40.1")
 	implementation("com.zaxxer:HikariCP:5.0.1")
 
-	implementation("com.amazonaws:aws-java-sdk-s3:1.12.332")
+	implementation("com.amazonaws:aws-java-sdk-s3:1.12.338")
 	implementation("org.bitbucket.b_c:jose4j:0.9.2")
 
 	implementation("com.squareup.retrofit2:retrofit:2.9.0")
