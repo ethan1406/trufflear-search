@@ -197,6 +197,8 @@ class InfluencerAccountConnectIgService (
             afterToken = igUserMedia.paging?.cursors?.after
 
         } while (nextLink != null && afterToken != null)
+
+        return igPosts
     }
 
     private fun deleteOldPosts(oldPostIgIds: Set<String>) {
