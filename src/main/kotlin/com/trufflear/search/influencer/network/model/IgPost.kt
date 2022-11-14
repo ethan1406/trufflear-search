@@ -13,8 +13,20 @@ data class IgPost(
     @SerializedName("timestamp") val timestamp: String,
 )
 
+data class Paging(
+    @SerializedName("cursors") val cursors: Cursors?,
+    @SerializedName("previous") val previous: String?,
+    @SerializedName("next") val next: String?
+)
+
+data class Cursors(
+    @SerializedName("before") val before: String?,
+    @SerializedName("after") val after: String?
+)
+
 data class IgUserMedia(
-    @SerializedName("data") val data: List<IgPost>
+    @SerializedName("data") val data: List<IgPost>,
+    @SerializedName("paging") val paging: Paging?
 )
 
 data class IgUserInfo(

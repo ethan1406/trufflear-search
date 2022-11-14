@@ -22,8 +22,14 @@ internal object IgApiParams {
     const val responseType = "response_type"
     const val scope = "scope"
     const val code = "code"
+    const val limit = "limit"
     const val accessToken = "access_token"
+    const val after = "after"
     const val fields = "fields"
+}
+
+internal object IgApiPaths {
+    const val userId = "user_id"
 }
 
 internal object IgMediaFields {
@@ -50,6 +56,7 @@ enum class IgMediaType(name: String) {
     CAROUSEL_ALBUM("CAROUSEL_ALBUM");
 }
 
+internal const val fetchingLimit = 100
 
 internal object IgCodeGrantType {
     const val authCodeGrantType = "authorization_code"

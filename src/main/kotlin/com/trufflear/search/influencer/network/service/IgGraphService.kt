@@ -1,6 +1,7 @@
 package com.trufflear.search.influencer.network.service
 
 import com.trufflear.search.config.IgApiParams
+import com.trufflear.search.config.IgApiPaths
 import com.trufflear.search.influencer.network.model.IgLongLivedTokenResponse
 import com.trufflear.search.influencer.network.model.IgUserInfo
 import com.trufflear.search.influencer.network.model.IgUserMedia
@@ -17,16 +18,18 @@ interface IgGraphService {
         @Query(IgApiParams.accessToken) accessToken: String,
     ): IgLongLivedTokenResponse
 
-    @GET("/{user-id}/media")
+    @GET("/{${IgApiPaths.userId}}/media")
     suspend fun getUserMedia(
-        @Path("user-id") userId: String,
+        @Path(IgApiPaths.userId) userId: String,
+        @Query(IgApiParams.limit) limit: Int,
         @Query(IgApiParams.fields, encoded = true) fields: String,
         @Query(IgApiParams.accessToken) accessToken: String,
+        @Query(IgApiParams.after) after: String?,
     ): IgUserMedia
 
-    @GET("/{user-id}")
+    @GET("/{${IgApiPaths.userId}}")
     suspend fun getUser(
-        @Path("user-id") userId: String,
+        @Path(IgApiPaths.userId) userId: String,
         @Query(IgApiParams.fields, encoded = true) fields: String,
         @Query(IgApiParams.accessToken) accessToken: String,
     ): IgUserInfo

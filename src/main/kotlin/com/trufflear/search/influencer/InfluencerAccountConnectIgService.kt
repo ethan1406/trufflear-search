@@ -120,7 +120,6 @@ class InfluencerAccountConnectIgService (
             fields = getUserInfoFieldsString(),
             accessToken = accessToken
         )
-        println(igUserIndo)
 
         transaction(Database.connect(dataSource)) {
             addLogger(StdOutSqlLogger)
@@ -145,10 +144,10 @@ class InfluencerAccountConnectIgService (
         influencerEmail: String
     ) {
         logger.info ("getting user media for $influencerEmail")
-        val igUserMedia = igGraphService.getUserMedia(
-            userId = instagramUserId,
-            fields = getUserMediaFieldsString(),
-            accessToken = accessToken
+
+        val igPosts = getAllUserPosts(
+            accessToken = accessToken,
+            instagramUserId = instagramUserId
         )
 
         transaction(Database.connect(dataSource)) {
@@ -159,17 +158,45 @@ class InfluencerAccountConnectIgService (
                 .map { it[PostDbDto.igId] }
                 .toHashSet()
 
-            val incomingPosts = igUserMedia.data
+            val incomingPostsRemovingNewLine = igPosts.map {
+                it.copy(
+                    caption = it.caption?.replace("\n", " ")
+                )
+            }
 
-            deleteOldPosts(existingPostIgIdSet.minus(incomingPosts.map { it.id }.toHashSet()))
+            deleteOldPosts(existingPostIgIdSet.minus(incomingPostsRemovingNewLine.map { it.id }.toHashSet()))
             insertNewPosts(
-                newPosts = incomingPosts
+                newPosts = incomingPostsRemovingNewLine
                     .filter { existingPostIgIdSet.contains(it.id).not() },
                 influencerEmail = influencerEmail
             )
 
-            updatePosts(incomingPosts.filter { existingPostIgIdSet.contains(it.id) })
+            updatePosts(incomingPostsRemovingNewLine.filter { existingPostIgIdSet.contains(it.id) })
         }
+    }
+
+    private suspend fun getAllUserPosts(
+        instagramUserId: String,
+        accessToken: String,
+    ): List<IgPost> {
+        val igPosts = mutableListOf<IgPost>()
+
+        var afterToken: String? = null
+        var nextLink: String?
+        do {
+            val igUserMedia = igGraphService.getUserMedia(
+                userId = instagramUserId,
+                limit = fetchingLimit,
+                fields = getUserMediaFieldsString(),
+                accessToken = accessToken,
+                after = afterToken
+            )
+            igPosts.addAll(igUserMedia.data)
+
+            nextLink = igUserMedia.paging?.next
+            afterToken = igUserMedia.paging?.cursors?.after
+
+        } while (nextLink != null && afterToken != null)
     }
 
     private fun deleteOldPosts(oldPostIgIds: Set<String>) {

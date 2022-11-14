@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 
 object PostDbDto: LongIdTable("INFLUENCER_POST") {
     val igId = varchar("igId", 50)
-    val influencerEmail = varchar("email", 50)
+    val influencerEmail = varchar("influencer_email", 50)
     val username = varchar("username", 30)
     val caption = varchar("caption", 3000).default("")
     val hashtags = varchar("hashtags", 4200).default("")

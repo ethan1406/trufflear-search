@@ -9,17 +9,17 @@ import org.typesense.model.Field
 import org.typesense.resources.Node
 import java.time.Duration
 
-class TypeSenseService {
+class SearchIndexService {
     private fun getTypeSenseClient(): Client {
         val nodes = listOf(
             Node(
-                System.getenv("TYPESENSE_PROTOCOL?") ?: "https",  // For Typesense Cloud use https
+                System.getenv("TYPESENSE_PROTOCOL") ?: "https",  // For Typesense Cloud use https
                 System.getenv("TYPESENSE_HOST")?: "search.trufflear.com",  // For Typesense Cloud use xxx.a1.typesense.net
                 System.getenv("TYPESENSE_PORT") ?:"8108" // For Typesense Cloud use 443
             )
         )
 
-        val configuration = Configuration(nodes, Duration.ofSeconds(2), System.getenv("TYPESENSE_ADMIN_API_KEY?") ?: "")
+        val configuration = Configuration(nodes, Duration.ofSeconds(2), System.getenv("TYPESENSE_ADMIN_API_KEY") ?: "")
         return Client(configuration)
     }
 
@@ -34,9 +34,9 @@ class TypeSenseService {
                 Field().name(TypesenseFields.mentions).type(FieldTypes.STRING),
                 Field().name(TypesenseFields.hashtags).type(FieldTypes.STRING),
                 Field().name(TypesenseFields.permalink).type(FieldTypes.STRING),
-                Field().name(TypesenseFields.createdAtTimeMilli).type(FieldTypes.INT64)
+                Field().name(TypesenseFields.createdAtTimeMillis).type(FieldTypes.INT64)
             )
-        ).defaultSortingField(TypesenseFields.createdAtTimeMilli)
+        )
 
         client.collections().create(collectionSchema)
     }

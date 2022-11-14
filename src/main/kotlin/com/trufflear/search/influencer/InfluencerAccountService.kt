@@ -1,7 +1,7 @@
 package com.trufflear.search.influencer
 
 import com.trufflear.search.influencer.database.models.InfluencerDbDto
-import com.trufflear.search.influencer.network.service.TypeSenseService
+import com.trufflear.search.influencer.network.service.SearchIndexService
 import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +15,7 @@ import kotlin.coroutines.coroutineContext
 
 internal class InfluencerAccountService(
     private val dataSource: DataSource,
-    private val searchIndexService: TypeSenseService
+    private val searchIndexService: SearchIndexService
 ) : InfluencerAccountServiceGrpcKt.InfluencerAccountServiceCoroutineImplBase() {
 
     private val logger = KotlinLogging.logger {}
@@ -38,14 +38,16 @@ internal class InfluencerAccountService(
 
                 searchIndexService.createSearchCollectionForInfluencer(influencer.email)
             } catch (e: ExposedSQLException) {
-                logger.error(e) { "error creating user" }
+                logger.error(e) { "error creating user for ${influencer.email}" }
 
-                if (e.sqlState == "23505") {
+                if (e.sqlState == "23505" || e.sqlState == "23000") {
                     logger.error("user already exists")
                     throw StatusException(Status.ALREADY_EXISTS)
                 }
 
                 throw StatusException(Status.INTERNAL)
+            } catch (e: Exception) {
+                logger.error(e) { "error creating for ${influencer.email}: $e" }
             }
         }
 
