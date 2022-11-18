@@ -1,4 +1,4 @@
-package com.trufflear.search.influencer
+package com.trufflear.search.influencer.services
 
 import com.trufflear.search.config.*
 import com.trufflear.search.config.IgCodeGrantType
@@ -6,12 +6,13 @@ import com.trufflear.search.config.IgMediaFields
 import com.trufflear.search.config.appSecret
 import com.trufflear.search.config.clientId
 import com.trufflear.search.config.redirectUri
+import com.trufflear.search.influencer.*
 import com.trufflear.search.influencer.database.models.InfluencerDbDto
 import com.trufflear.search.influencer.database.models.PostDbDto
-import com.trufflear.search.influencer.domain.Influencer
 import com.trufflear.search.influencer.network.model.IgPost
 import com.trufflear.search.influencer.network.service.IgAuthService
 import com.trufflear.search.influencer.network.service.IgGraphService
+import com.trufflear.search.influencer.services.util.checkIfUserExists
 import com.trufflear.search.influencer.util.CaptionParser
 import com.trufflear.search.influencer.util.igDateFormat
 import io.grpc.Status
@@ -52,10 +53,10 @@ class InfluencerAccountConnectIgService (
             ?: throw StatusException(Status.UNAUTHENTICATED)
 
         withContext(Dispatchers.IO) {
-            try {
-                logger.info { "checking if user exists" }
-                checkIfUserExist(dataSource, influencer)
+            logger.info { "checking if user exists" }
+            checkIfUserExists(dataSource, influencer)
 
+            try {
                 val shortLivedTokenResponse = igAuthService.getShortLivedToken(
                     clientId = clientId,
                     clientSecret = appSecret,
@@ -115,7 +116,7 @@ class InfluencerAccountConnectIgService (
         )
 
         logger.info ("getting user info for $influencerEmail")
-        val igUserIndo = igGraphService.getUser(
+        val igUserInfo = igGraphService.getUser(
             userId = instagramUserId,
             fields = getUserInfoFieldsString(),
             accessToken = accessToken
@@ -128,12 +129,13 @@ class InfluencerAccountConnectIgService (
                 it[igUserId] = instagramUserId
                 it[igLongLivedAccessToken] = longLivedTokenResponse.accessToken
                 it[igLongLivedAccessTokenExpiresIn] = longLivedTokenResponse.expiresIn.toLongOrNull() ?: 0
-                it[igMediaCount] = igUserIndo.mediaCount
-                it[igAccountType] = igUserIndo.accountType
+                it[igMediaCount] = igUserInfo.mediaCount
+                it[igAccountType] = igUserInfo.accountType
             }
 
             InfluencerDbDto.update({ InfluencerDbDto.email eq influencerEmail and (InfluencerDbDto.username eq "") }) {
-                it[username] = igUserIndo.userName
+                it[username] = igUserInfo.userName
+                it[profileTitle] = igUserInfo.userName
             }
         }
     }
@@ -240,17 +242,6 @@ class InfluencerAccountConnectIgService (
                 mediaType = post.mediaType
             )
             this[PostDbDto.createdAtTimestamp] = convertIgTimeToInstant(post.timestamp)
-        }
-    }
-
-
-    private fun checkIfUserExist(dataSource: DataSource, influencer: Influencer) {
-        transaction(Database.connect(dataSource)) {
-            val userNotCreated = InfluencerDbDto.select { InfluencerDbDto.email eq influencer.email }.empty()
-            if (userNotCreated) {
-                println("user doesn't exist")
-                throw StatusException(Status.UNAUTHENTICATED)
-            }
         }
     }
 

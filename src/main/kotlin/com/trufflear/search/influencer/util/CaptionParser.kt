@@ -7,9 +7,15 @@ class CaptionParser(
 
     fun getHashTags(caption: String): String =
         getHashtagList(caption).joinToString(" ")
+            .replace("[^\\s-]#".toRegex()) {
+                it.value[0].toString() + " #"
+            }
 
     fun getMentions(caption: String): String =
         getMentionList(caption).joinToString(" ")
+            .replace("[^\\s-]@".toRegex()) {
+                it.value[0].toString() + " @"
+            }
 
     private fun getHashtagList(caption: String): List<String> =
         hashTagRegex.findAll(caption)

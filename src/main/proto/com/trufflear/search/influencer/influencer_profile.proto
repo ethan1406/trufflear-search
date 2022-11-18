@@ -6,15 +6,19 @@ option java_multiple_files = true;
 option java_package = "com.trufflear.search.influencer";
 option java_outer_classname = "InfluencerProfileProtos";
 
+
+// Influencer profile encapsulates an influencer's information
 message InfluencerProfile {
   string profile_pic_url = 1;
-  string username = 2;
-  string bio_description = 3;
-  repeated Post posts = 4;
+  string profile_title = 2;
+  string category_title = 3;
+  string bio_description = 4;
 }
 
-message Post {
-  string thumbnail_url = 1;
-  string link_to_original_post = 2;
-  string snippet = 3;
-}
+
+//
+//message Post {
+//  string thumbnail_url = 1;
+//  string link_to_original_post = 2;
+//  string snippet = 3;
+//}

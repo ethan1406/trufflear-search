@@ -1,7 +1,9 @@
-package com.trufflear.search.influencer
+package com.trufflear.search.influencer.services
 
+import com.trufflear.search.influencer.*
 import com.trufflear.search.influencer.database.models.InfluencerDbDto
 import com.trufflear.search.influencer.network.service.SearchIndexService
+import com.trufflear.search.influencer.services.util.checkIfUserExists
 import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +23,7 @@ internal class InfluencerAccountService(
     private val logger = KotlinLogging.logger {}
 
     override suspend fun signup(request: SignupRequest): SignupResponse {
+        logger.debug { "user signing up" }
         val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
             ?: throw StatusException(Status.UNAUTHENTICATED)
 
@@ -54,16 +57,22 @@ internal class InfluencerAccountService(
         return signupResponse { }
     }
 
-    override suspend fun updateBioDescription(request: UpdateBioDescriptionRequest): UpdateBioDescriptionResponse {
+    override suspend fun updateProfile(request: UpdateProfileRequest): UpdateProfileRequestResponse {
+        logger.debug { "user updating profile" }
+
         val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
             ?: throw StatusException(Status.UNAUTHENTICATED)
 
         withContext(Dispatchers.IO) {
+            logger.info { "checking if user exists" }
+            checkIfUserExists(dataSource, influencer)
             try {
                 transaction(Database.connect(dataSource)) {
                     addLogger(StdOutSqlLogger)
 
                     InfluencerDbDto.update({ InfluencerDbDto.email eq influencer.email}) {
+                        it[profileTitle] = request.profileTitle
+                        it[categoryTitle] = request.professionCategory
                         it[bioDescription] = request.bioDescription
                     }
                 }
@@ -73,29 +82,6 @@ internal class InfluencerAccountService(
             }
         }
 
-        return updateBioDescriptionResponse { }
-    }
-
-    override suspend fun updateUsername(request: UpdateUsernameRequest): UpdateUsernameResponse {
-        val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
-            ?: throw StatusException(Status.UNAUTHENTICATED)
-
-        withContext(Dispatchers.IO) {
-            try {
-                transaction(Database.connect(dataSource)) {
-                    addLogger(StdOutSqlLogger)
-
-                    InfluencerDbDto.update({ InfluencerDbDto.email eq influencer.email}) {
-                        it[username] = request.username
-                    }
-                }
-            } catch (e: ExposedSQLException) {
-                println("error updating bio description: ${e.message}")
-
-                throw StatusException(Status.INTERNAL)
-            }
-        }
-
-        return updateUsernameResponse { }
+        return updateProfileRequestResponse { }
     }
 }

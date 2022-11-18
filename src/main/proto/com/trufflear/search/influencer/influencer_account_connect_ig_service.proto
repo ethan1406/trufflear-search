@@ -6,15 +6,26 @@ option java_multiple_files = true;
 option java_package = "com.trufflear.search.influencer";
 option java_outer_classname = "InfluencerAccountConnectIgServiceProtos";
 
+
+/*
+ * This service connects the influencer's Instagram account with their Trufflear account.
+ * All requests to the service must contain the id token of the influencer in the metadata, "id-token"
+ */
 service InfluencerAccountConnectIgService {
+  // Gets the Instagram's Authorization Window URL
   rpc GetIgConnectUrl(GetIgConnectUrlRequest) returns (GetIgConnectUrlResponse);
+
+  // Fetches and connects the influencer's Instagram account data with Trufflear backend
   rpc ConnectIgUserMedia(ConnectIgUserMediaRequest) returns (ConnectIgUserMediaResponse);
+
+  // Fetches the influencer's Instagram account data and refreshes Trufflear backend
   rpc RefreshIgUserMedia(RefreshIgUserMediaRequest) returns (RefreshIgUserMediaResponse);
 }
 
 message GetIgConnectUrlRequest {}
 
 message GetIgConnectUrlResponse {
+  // url of the Instagram's Authorization Window URL. It will contain a redirect Url.
   string url = 1;
 }
 

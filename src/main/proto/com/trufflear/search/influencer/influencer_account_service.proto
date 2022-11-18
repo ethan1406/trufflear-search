@@ -8,10 +8,13 @@ option java_multiple_files = true;
 option java_package = "com.trufflear.search.influencer";
 option java_outer_classname = "InfluencerAccountServiceProtos";
 
+/*
+ * This service connects the influencer's Instagram account with their Trufflear account.
+ * All requests to the service must contain the id token of the influencer in the metadata, "id-token"
+ */
 service InfluencerAccountService {
   rpc Signup(SignupRequest) returns (SignupResponse);
-  rpc UpdateUsername(UpdateUsernameRequest) returns (UpdateUsernameResponse);
-  rpc UpdateBioDescription(UpdateBioDescriptionRequest) returns (UpdateBioDescriptionResponse);
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileRequestResponse);
   rpc GetAccountInfo(GetAccountInfoRequest) returns (GetAccountInfoResponse);
 }
 
@@ -19,17 +22,14 @@ message SignupRequest {}
 
 message SignupResponse {}
 
-message UpdateUsernameRequest {
-  string username = 1;
+message UpdateProfileRequest {
+  string profile_title = 1;
+  string profession_category = 2;
+  string bio_description = 3;
+
 }
 
-message UpdateUsernameResponse {}
-
-message UpdateBioDescriptionRequest {
-  string bio_description = 1;
-}
-
-message UpdateBioDescriptionResponse {}
+message UpdateProfileRequestResponse {}
 
 message GetAccountInfoRequest {}
 

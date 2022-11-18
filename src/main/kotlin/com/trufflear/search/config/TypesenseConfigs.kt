@@ -9,3 +9,7 @@ internal object TypesenseFields {
     const val permalink = "permalink"
     const val createdAtTimeMillis = "created_at_time_millis"
 }
+
+internal object TypesenseLocale {
+    const val chinese = "zh"
+}

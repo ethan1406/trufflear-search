@@ -1,6 +1,7 @@
 package com.trufflear.search.influencer.network.service
 
 import com.trufflear.search.config.TypesenseFields
+import com.trufflear.search.config.TypesenseLocale
 import org.typesense.api.Client
 import org.typesense.api.Configuration
 import org.typesense.api.FieldTypes
@@ -29,12 +30,12 @@ class SearchIndexService {
         collectionSchema.name(influencerEmail).fields(
             listOf(
                 Field().name(TypesenseFields.postId).type(FieldTypes.STRING),
-                Field().name(TypesenseFields.caption).type(FieldTypes.STRING),
+                Field().name(TypesenseFields.caption).type(FieldTypes.STRING).locale(TypesenseLocale.chinese),
                 Field().name(TypesenseFields.thumbnailUrl).type(FieldTypes.STRING),
                 Field().name(TypesenseFields.mentions).type(FieldTypes.STRING),
-                Field().name(TypesenseFields.hashtags).type(FieldTypes.STRING),
+                Field().name(TypesenseFields.hashtags).type(FieldTypes.STRING).locale(TypesenseLocale.chinese),
                 Field().name(TypesenseFields.permalink).type(FieldTypes.STRING),
-                Field().name(TypesenseFields.createdAtTimeMillis).type(FieldTypes.INT64)
+                Field().name(TypesenseFields.createdAtTimeMillis).type(FieldTypes.INT64).sort(true)
             )
         )
 

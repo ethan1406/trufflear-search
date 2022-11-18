@@ -8,23 +8,27 @@ option java_multiple_files = true;
 option java_package = "com.trufflear.search.influencer";
 option java_outer_classname = "GetInfluencerPublicProfileProtos";
 
+// This service shows the Influencer's profile information
 service InfluencerPublicProfileService {
   rpc GetInfluencerPublicProfile(GetInfluencerPublicProfileRequest) returns (GetInfluencerPublicProfileResponse);
 
 }
 
 message GetInfluencerPublicProfileRequest {
-  int32 influencer_id = 1;
+  // username of the influencer
+  string username = 1;
 }
 
 message GetInfluencerPublicProfileResponse {
+    // Describes the response state. Can be either success or error.
     oneof state {
       Success success = 1;
       Error error = 2;
     }
 
     message Success {
-      InfluencerProfile influencer_profile = 1;
+      // profile information of the influencer
+      InfluencerProfile profile = 1;
     }
 
     message Error {
@@ -32,7 +36,9 @@ message GetInfluencerPublicProfileResponse {
 
       enum ErrorType {
         UNKNOWN = 0;
-        PROFILE_NOT_LIVE = 1;
+        // The influencer's profile is disabled
+        PROFILE_DOES_NOT_EXIST = 1;
+        PROFILE_NOT_LIVE = 2;
       }
     }
 }

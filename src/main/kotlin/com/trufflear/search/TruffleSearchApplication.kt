@@ -3,11 +3,13 @@ package com.trufflear.search
 import com.trufflear.search.config.igApiSubdomainBaseUrl
 import com.trufflear.search.config.igGraphSubdomainBaseUrl
 import com.trufflear.search.influencer.AccountInterceptor
-import com.trufflear.search.influencer.InfluencerAccountConnectIgService
-import com.trufflear.search.influencer.InfluencerAccountService
+import com.trufflear.search.influencer.database.scripts.CreateInfluencerScript
+import com.trufflear.search.influencer.services.InfluencerAccountConnectIgService
+import com.trufflear.search.influencer.services.InfluencerAccountService
 import com.trufflear.search.influencer.network.service.IgAuthService
 import com.trufflear.search.influencer.network.service.IgGraphService
 import com.trufflear.search.influencer.network.service.SearchIndexService
+import com.trufflear.search.influencer.services.InfluencerPublicProfileService
 import com.trufflear.search.influencer.util.CaptionParser
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -39,6 +41,7 @@ class TruffleSearchApplication(
                 dataSource, igAuthService, igGraphService, captionParser
             ), AccountInterceptor())
         )
+        .addService(InfluencerPublicProfileService(dataSource))
         .build()
 
     fun start() {
