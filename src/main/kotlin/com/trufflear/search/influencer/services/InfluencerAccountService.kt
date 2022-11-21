@@ -1,7 +1,7 @@
 package com.trufflear.search.influencer.services
 
 import com.trufflear.search.influencer.*
-import com.trufflear.search.influencer.database.models.InfluencerDbDto
+import com.trufflear.search.influencer.database.tables.InfluencerTable
 import com.trufflear.search.influencer.network.service.SearchIndexService
 import com.trufflear.search.influencer.services.util.checkIfUserExists
 import io.grpc.Status
@@ -32,7 +32,7 @@ internal class InfluencerAccountService(
                 transaction(Database.connect(dataSource)) {
                     addLogger(StdOutSqlLogger)
 
-                    InfluencerDbDto.insert {
+                    InfluencerTable.insert {
                         it[name] = influencer.name
                         it[email] = influencer.email
                         it[isEmailVerified] = influencer.emailVerified
@@ -48,9 +48,10 @@ internal class InfluencerAccountService(
                     throw StatusException(Status.ALREADY_EXISTS)
                 }
 
-                throw StatusException(Status.INTERNAL)
+                throw StatusException(Status.UNKNOWN)
             } catch (e: Exception) {
-                logger.error(e) { "error creating for ${influencer.email}: $e" }
+                logger.error(e) { "error creating for ${influencer.email}" }
+                throw StatusException(Status.UNKNOWN)
             }
         }
 
@@ -70,7 +71,7 @@ internal class InfluencerAccountService(
                 transaction(Database.connect(dataSource)) {
                     addLogger(StdOutSqlLogger)
 
-                    InfluencerDbDto.update({ InfluencerDbDto.email eq influencer.email}) {
+                    InfluencerTable.update({ InfluencerTable.email eq influencer.email}) {
                         it[profileTitle] = request.profileTitle
                         it[categoryTitle] = request.professionCategory
                         it[bioDescription] = request.bioDescription

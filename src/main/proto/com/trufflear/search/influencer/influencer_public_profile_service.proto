@@ -2,14 +2,15 @@ syntax = "proto3";
 
 package influencer;
 
-import "com/trufflear/search/influencer/influencer_profile.proto";
+import public "influencer_profile.proto";
 
 option java_multiple_files = true;
 option java_package = "com.trufflear.search.influencer";
 option java_outer_classname = "GetInfluencerPublicProfileProtos";
 
-// This service shows the Influencer's profile information
+// This service is for the users to retrieve Influencer's profile information
 service InfluencerPublicProfileService {
+  // Get the Influencer's profile info
   rpc GetInfluencerPublicProfile(GetInfluencerPublicProfileRequest) returns (GetInfluencerPublicProfileResponse);
 
 }
@@ -31,13 +32,15 @@ message GetInfluencerPublicProfileResponse {
       InfluencerProfile profile = 1;
     }
 
+    // For any error, redirect the user back to Trufflear home page
     message Error {
       ErrorType error_type = 1;
 
       enum ErrorType {
         UNKNOWN = 0;
-        // The influencer's profile is disabled
+        // The influencer's profile does not exist
         PROFILE_DOES_NOT_EXIST = 1;
+        // The influencer's profile is disabled
         PROFILE_NOT_LIVE = 2;
       }
     }

@@ -1,12 +1,14 @@
-package com.trufflear.search.influencer.database.models
+package com.trufflear.search.influencer.database.tables
 
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.IdTable
+import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.timestamp
 
-object InfluencerDbDto: Table("INFLUENCER") {
+object InfluencerTable: IdTable<String>("INFLUENCER") {
     val name = varchar("name", 50)
-    val email = varchar("email", 50)
+    val email = varchar("email", 50).uniqueIndex()
     val isEmailVerified = bool("email_verified")
     val isProfileLive = bool("is_profile_live").default(true)
     val bioDescription = varchar("bio_description", 200).default("")
@@ -21,5 +23,5 @@ object InfluencerDbDto: Table("INFLUENCER") {
     val igLongLivedAccessTokenExpiresIn = long("ig_long_lived_access_token_expires_in").default(0L)
     val dateCreated = timestamp("date_created").defaultExpression(CurrentTimestamp())
 
-    override val primaryKey = PrimaryKey(email)
+    override val id: Column<EntityID<String>> = email.entityId()
 }

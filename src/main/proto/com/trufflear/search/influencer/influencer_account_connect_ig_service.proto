@@ -13,28 +13,66 @@ option java_outer_classname = "InfluencerAccountConnectIgServiceProtos";
  */
 service InfluencerAccountConnectIgService {
   // Gets the Instagram's Authorization Window URL
-  rpc GetIgConnectUrl(GetIgConnectUrlRequest) returns (GetIgConnectUrlResponse);
+  rpc GetIgAuthorizationWindowUrl(GetIgAuthorizationWindowUrlRequest) returns (GetIgAuthorizationWindowUrlResponse);
 
-  // Fetches and connects the influencer's Instagram account data with Trufflear backend
+  /*
+   * Fetches and connects the influencer's Instagram account data with Trufflear backend.
+   * The call may take up to 15 seconds.
+   */
   rpc ConnectIgUserMedia(ConnectIgUserMediaRequest) returns (ConnectIgUserMediaResponse);
 
-  // Fetches the influencer's Instagram account data and refreshes Trufflear backend
+  /*
+   * Fetches the influencer's Instagram account data and refreshes Trufflear backend. Call should be made when the
+   * account manager hits the refresh button.
+   * The call may take up to 15 seconds.
+   */
   rpc RefreshIgUserMedia(RefreshIgUserMediaRequest) returns (RefreshIgUserMediaResponse);
 }
 
-message GetIgConnectUrlRequest {}
+message GetIgAuthorizationWindowUrlRequest {}
 
-message GetIgConnectUrlResponse {
-  // url of the Instagram's Authorization Window URL. It will contain a redirect Url.
+message GetIgAuthorizationWindowUrlResponse {
+  /*
+   * Url of the Instagram's Authorization Window URL. It will contain a redirect Url.
+   * Please go to https://developers.facebook.com/docs/instagram-basic-display-api/reference/oauth-authorize
+   * for more information.
+   *
+   * If the user denies the request in the Authroization Window:
+   * in a snackbar, display an error "Please allow Instagram connection to proceed".
+   */
   string url = 1;
 }
 
 message ConnectIgUserMediaRequest {
+  // auth code from GetIgConnectUrlResponse url.
   string instagram_auth_code = 1;
 }
 
+/*
+ * If the response returns an error with status PERMISSION_DENIED, display an error in a snackbar with
+ * message: "Trufflear requires the "Access your media" permission to proceed, please try again with that permission enabled".
+ * For any other errors, display a generic error message: "Something went wrong. Please try again."
+ */
 message ConnectIgUserMediaResponse {}
 
 message RefreshIgUserMediaRequest {}
 
-message RefreshIgUserMediaResponse {}
+message RefreshIgUserMediaResponse {
+  // Describes the refreshing result
+  oneof State {
+    Success success = 1;
+    AuthorizationRequired authorization_required = 2;
+  }
+
+  message Success {}
+
+  /*
+   * If this is present in the response, we need to repeat the authorization process by redirecting the user
+   * to the url. Once we get the auth code, we will make another call to ConnectIgUserMedia. When ConnectIgUserMedia
+   * is processing, the refresh animation should continue on the screen.
+   */
+  message AuthorizationRequired {
+    string auth_window_url = 1;
+  }
+
+}

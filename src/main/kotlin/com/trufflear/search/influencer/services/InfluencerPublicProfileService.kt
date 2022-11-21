@@ -1,20 +1,15 @@
 package com.trufflear.search.influencer.services
 
-import com.trufflear.search.influencer.*
-import com.trufflear.search.influencer.database.models.InfluencerDbDto
-import com.trufflear.search.influencer.domain.InfluencerPublicProfile
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.trufflear.search.influencer.GetInfluencerPublicProfileRequest
+import com.trufflear.search.influencer.GetInfluencerPublicProfileResponse
+import com.trufflear.search.influencer.InfluencerPublicProfileServiceGrpcKt
+import com.trufflear.search.influencer.getInfluencerPublicProfileResponse
+import com.trufflear.search.influencer.influencerProfile
+import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import mu.KotlinLogging
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.StdOutSqlLogger
-import org.jetbrains.exposed.sql.addLogger
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.transaction
-import javax.sql.DataSource
 
 class InfluencerPublicProfileService(
-    private val dataSource: DataSource
+    private val repository: InfluencerProfileRepository
 ): InfluencerPublicProfileServiceGrpcKt.InfluencerPublicProfileServiceCoroutineImplBase() {
 
     private val logger = KotlinLogging.logger {}
@@ -22,30 +17,7 @@ class InfluencerPublicProfileService(
     override suspend fun getInfluencerPublicProfile(request: GetInfluencerPublicProfileRequest): GetInfluencerPublicProfileResponse {
         logger.debug { "getting public profile for ${request.username}" }
 
-        val publicProfile = withContext(Dispatchers.IO) {
-            runCatching {
-                transaction(Database.connect(dataSource)) {
-                    addLogger(StdOutSqlLogger)
-
-                    InfluencerDbDto
-                        .slice(
-                            InfluencerDbDto.profileTitle, InfluencerDbDto.categoryTitle,
-                            InfluencerDbDto.bioDescription, InfluencerDbDto.profileImageUrl,
-                            InfluencerDbDto.isProfileLive
-                        )
-                        .select { InfluencerDbDto.username eq request.username }
-                        .map {
-                            InfluencerPublicProfile(
-                                profilePicUrl = it[InfluencerDbDto.profileImageUrl],
-                                profileTitle = it[InfluencerDbDto.profileTitle],
-                                professionCategory = it[InfluencerDbDto.categoryTitle],
-                                bioDescription = it[InfluencerDbDto.bioDescription],
-                                isProfileLive = it[InfluencerDbDto.isProfileLive]
-                            )
-                        }.firstOrNull()
-                }
-            }
-        }
+        val publicProfile = repository.getPublicProfile(request.username)
 
         val profile = publicProfile.getOrElse {
             logger.error(it) { "error getting influencer profile info" }

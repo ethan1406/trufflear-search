@@ -1,7 +1,6 @@
 package com.trufflear.search.influencer.database.scripts
 
-import com.trufflear.search.influencer.database.models.InfluencerDbDto
-import com.trufflear.search.influencer.database.models.PostDbDto
+import com.trufflear.search.influencer.database.tables.InfluencerTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import javax.sql.DataSource
@@ -11,7 +10,7 @@ object CreateInfluencerScript {
     fun createInfluencer(dataSource: DataSource) {
         transaction (Database.connect(dataSource)){
             addLogger(StdOutSqlLogger)
-            SchemaUtils.create(InfluencerDbDto)
+            SchemaUtils.create(InfluencerTable)
             //SchemaUtils.create(PostDbDto)
 
 //            InfluencerDbDto.insert {

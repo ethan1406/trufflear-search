@@ -67,12 +67,13 @@ class TruffleSearchApplication(
 }
 
 fun main() {
-    val datasource = getHikariDataSource()
 
     //CreateInfluencerScript.createInfluencer(datasource)
 
     BasicConfigurator.configure()
     val port = System.getenv("PORT")?.toInt() ?: 50051
+
+    val datasource = getHikariDataSource()
     val server = TruffleSearchApplication(
         port,
         datasource,

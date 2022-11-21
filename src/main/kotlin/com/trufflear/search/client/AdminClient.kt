@@ -18,7 +18,7 @@ class AdminClient(private val channel: ManagedChannel) : Closeable {
     suspend fun signup() {
         val signupRequest = signupRequest {  }
         val getAccountRequest = getInfluencerPublicProfileRequest {
-            username = "oyster_bamboo2"
+            username = "cooking_bobo"
         }
         val request = connectIgUserMediaRequest {
             instagramAuthCode = "AQCW5vADY2sytFAN9nuYTjqSkHYc3x9vNO0oxd6Ulrce5b9UAvmVEduo-L7cq1sohS32OvEdVr-XAGbJm866a9nequmhAIR54x3MRccTjpOR4va71_SmpsVVDXIB057tC5vQPSXG51GkW8n6ERu2Ca4wfrZIiBJ8WDUjJpqfxO7QV0AP6Z1fFDrn8eKw2LKIM2oZ2X2p33aUINulKIxY9zFj8_inEz9WJFfdf2kFciuPmQ"

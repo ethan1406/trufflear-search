@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package influencer;
 
-import "com/trufflear/search/influencer/influencer_profile.proto";
+import public "influencer_profile.proto";
 
 option java_multiple_files = true;
 option java_package = "com.trufflear.search.influencer";
@@ -13,9 +13,17 @@ option java_outer_classname = "InfluencerAccountServiceProtos";
  * All requests to the service must contain the id token of the influencer in the metadata, "id-token"
  */
 service InfluencerAccountService {
+  // Sign up for user whey they fist sign up via AWS Cognito
   rpc Signup(SignupRequest) returns (SignupResponse);
+
+  // Update profile information
   rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileRequestResponse);
-  rpc GetAccountInfo(GetAccountInfoRequest) returns (GetAccountInfoResponse);
+
+  // Get the account profile information
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+
+  // Set the profile URL to live or not
+  rpc SetProfileLive(SetProfileLiveRequest) returns (SetProfileLiveResponse);
 }
 
 message SignupRequest {}
@@ -31,8 +39,15 @@ message UpdateProfileRequest {
 
 message UpdateProfileRequestResponse {}
 
-message GetAccountInfoRequest {}
+message GetProfileRequest {}
 
-message GetAccountInfoResponse {
+message GetProfileResponse {
+  // profile info of the influencer
   InfluencerProfile influencer_profile = 1;
 }
+
+message SetProfileLiveRequest {
+  bool setProfileLive = 1;
+}
+
+message SetProfileLiveResponse {}

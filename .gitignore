@@ -2,7 +2,7 @@ HELP.md
 .gradle
 build/
 libs/
-.DS_Storegi
+.DS_Store
 src/main/kotlin/com/trufflear/search/client/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/

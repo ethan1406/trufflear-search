@@ -7,8 +7,8 @@ import com.trufflear.search.config.appSecret
 import com.trufflear.search.config.clientId
 import com.trufflear.search.config.redirectUri
 import com.trufflear.search.influencer.*
-import com.trufflear.search.influencer.database.models.InfluencerDbDto
-import com.trufflear.search.influencer.database.models.PostDbDto
+import com.trufflear.search.influencer.database.tables.InfluencerTable
+import com.trufflear.search.influencer.database.tables.PostTable
 import com.trufflear.search.influencer.network.model.IgPost
 import com.trufflear.search.influencer.network.service.IgAuthService
 import com.trufflear.search.influencer.network.service.IgGraphService
@@ -39,8 +39,8 @@ class InfluencerAccountConnectIgService (
 
     private val logger = KotlinLogging.logger {}
 
-    override suspend fun getIgConnectUrl(request: GetIgConnectUrlRequest): GetIgConnectUrlResponse =
-        getIgConnectUrlResponse {
+    override suspend fun getIgAuthorizationWindowUrl(request: GetIgAuthorizationWindowUrlRequest) =
+        getIgAuthorizationWindowUrlResponse {
             url = "$igApiSubdomainBaseUrl$authPath?${IgApiParams.clientId}=$clientId&" +
                     "${IgApiParams.redirectUri}=$redirectUri&${IgApiParams.responseType}=${IgResponseTypeFields.code}&" +
                     "${IgApiParams.scope}=${IgAuthScopeFields.userProfile},${IgAuthScopeFields.userMedia}"
@@ -125,7 +125,7 @@ class InfluencerAccountConnectIgService (
         transaction(Database.connect(dataSource)) {
             addLogger(StdOutSqlLogger)
 
-            InfluencerDbDto.update({ InfluencerDbDto.email eq influencerEmail}) {
+            InfluencerTable.update({ InfluencerTable.email eq influencerEmail}) {
                 it[igUserId] = instagramUserId
                 it[igLongLivedAccessToken] = longLivedTokenResponse.accessToken
                 it[igLongLivedAccessTokenExpiresIn] = longLivedTokenResponse.expiresIn.toLongOrNull() ?: 0
@@ -133,7 +133,7 @@ class InfluencerAccountConnectIgService (
                 it[igAccountType] = igUserInfo.accountType
             }
 
-            InfluencerDbDto.update({ InfluencerDbDto.email eq influencerEmail and (InfluencerDbDto.username eq "") }) {
+            InfluencerTable.update({ InfluencerTable.email eq influencerEmail and (InfluencerTable.username eq "") }) {
                 it[username] = igUserInfo.userName
                 it[profileTitle] = igUserInfo.userName
             }
@@ -155,9 +155,9 @@ class InfluencerAccountConnectIgService (
         transaction(Database.connect(dataSource)) {
             addLogger(StdOutSqlLogger)
 
-            val existingPostIgIdSet = PostDbDto.slice(PostDbDto.igId)
-                .select { PostDbDto.influencerEmail eq influencerEmail }
-                .map { it[PostDbDto.igId] }
+            val existingPostIgIdSet = PostTable.slice(PostTable.igId)
+                .select { PostTable.influencerEmail eq influencerEmail }
+                .map { it[PostTable.igId] }
                 .toHashSet()
 
             val incomingPostsRemovingNewLine = igPosts.map {
@@ -204,12 +204,12 @@ class InfluencerAccountConnectIgService (
     }
 
     private fun deleteOldPosts(oldPostIgIds: Set<String>) {
-        PostDbDto.deleteWhere { igId inList oldPostIgIds }
+        PostTable.deleteWhere { igId inList oldPostIgIds }
     }
 
     private fun updatePosts(postsToUpdate: List<IgPost>) {
         postsToUpdate.forEach { post ->
-            PostDbDto.update({ PostDbDto.igId eq post.id }) {
+            PostTable.update({ PostTable.igId eq post.id }) {
                 post.caption?.let { cap ->
                     it[caption] = cap
                     it[hashtags] = captionParser.getHashTags(cap)
@@ -224,24 +224,24 @@ class InfluencerAccountConnectIgService (
         newPosts: List<IgPost>,
         influencerEmail: String
     ){
-        PostDbDto.batchInsert(newPosts) { post ->
-            this[PostDbDto.igId] = post.id
-            this[PostDbDto.influencerEmail] = influencerEmail
-            this[PostDbDto.username] = post.username
+        PostTable.batchInsert(newPosts) { post ->
+            this[PostTable.igId] = post.id
+            this[PostTable.influencerEmail] = influencerEmail
+            this[PostTable.username] = post.username
             post.caption?.let {
-                this[PostDbDto.caption] = it
-                this[PostDbDto.hashtags] = captionParser.getHashTags(it)
-                this[PostDbDto.mentions] = captionParser.getMentions(it)
+                this[PostTable.caption] = it
+                this[PostTable.hashtags] = captionParser.getHashTags(it)
+                this[PostTable.mentions] = captionParser.getMentions(it)
             }
-            this[PostDbDto.permalink] = post.permalink
-            this[PostDbDto.mediaType] = post.mediaType
-            this[PostDbDto.mediaUrl] = post.mediaUrl
-            this[PostDbDto.thumbnailUrl] = getCorrectThumbnailUrl(
+            this[PostTable.permalink] = post.permalink
+            this[PostTable.mediaType] = post.mediaType
+            this[PostTable.mediaUrl] = post.mediaUrl
+            this[PostTable.thumbnailUrl] = getCorrectThumbnailUrl(
                 thumbnailUrl = post.thumbnailUrl,
                 mediaUrl = post.mediaUrl,
                 mediaType = post.mediaType
             )
-            this[PostDbDto.createdAtTimestamp] = convertIgTimeToInstant(post.timestamp)
+            this[PostTable.createdAtTimestamp] = convertIgTimeToInstant(post.timestamp)
         }
     }
 

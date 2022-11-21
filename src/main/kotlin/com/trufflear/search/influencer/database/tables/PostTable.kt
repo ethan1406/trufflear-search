@@ -1,11 +1,11 @@
-package com.trufflear.search.influencer.database.models
+package com.trufflear.search.influencer.database.tables
 
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.javatime.timestamp
 
-object PostDbDto: LongIdTable("INFLUENCER_POST") {
+object PostTable: LongIdTable("INFLUENCER_POST") {
     val igId = varchar("igId", 50)
-    val influencerEmail = varchar("influencer_email", 50)
+    val influencerEmail = reference("influencer_email", InfluencerTable.email)
     val username = varchar("username", 30)
     val caption = varchar("caption", 3000).default("")
     val hashtags = varchar("hashtags", 4200).default("")
