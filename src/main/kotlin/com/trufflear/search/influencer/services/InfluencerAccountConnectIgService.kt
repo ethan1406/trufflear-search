@@ -12,7 +12,9 @@ import com.trufflear.search.influencer.database.tables.PostTable
 import com.trufflear.search.influencer.network.model.IgPost
 import com.trufflear.search.influencer.network.service.IgAuthService
 import com.trufflear.search.influencer.network.service.IgGraphService
-import com.trufflear.search.influencer.services.util.checkIfUserExists
+import com.trufflear.search.influencer.network.service.IgServiceResult
+import com.trufflear.search.influencer.network.service.InstagramService
+import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.util.CaptionParser
 import com.trufflear.search.influencer.util.igDateFormat
 import io.grpc.Status
@@ -23,8 +25,6 @@ import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.transactions.transaction
-import retrofit2.HttpException
-import java.lang.Exception
 import java.sql.Timestamp
 import java.time.Instant
 import javax.sql.DataSource
@@ -34,7 +34,9 @@ class InfluencerAccountConnectIgService (
     private val dataSource: DataSource,
     private val igAuthService: IgAuthService,
     private val igGraphService: IgGraphService,
-    private val captionParser: CaptionParser
+    private val captionParser: CaptionParser,
+    private val influencerProfileRepository: InfluencerProfileRepository,
+    private val igService: InstagramService
 ) : InfluencerAccountConnectIgServiceGrpcKt.InfluencerAccountConnectIgServiceCoroutineImplBase() {
 
     private val logger = KotlinLogging.logger {}
@@ -52,51 +54,44 @@ class InfluencerAccountConnectIgService (
         val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
             ?: throw StatusException(Status.UNAUTHENTICATED)
 
-        withContext(Dispatchers.IO) {
-            logger.info { "checking if user exists" }
-            checkIfUserExists(dataSource, influencer)
 
-            try {
-                val shortLivedTokenResponse = igAuthService.getShortLivedToken(
-                    clientId = clientId,
-                    clientSecret = appSecret,
-                    grantType = IgCodeGrantType.authCodeGrantType,
-                    redirectUri = redirectUri,
-                    code = request.instagramAuthCode
-                )
+        logger.info { "checking if user exists" }
+        influencerProfileRepository.checkIfInfluencerExists(influencer.email)
+            ?: throw StatusException(Status.PERMISSION_DENIED.withDescription("user must sign up first"))
 
-                println("asdhfasd: ${shortLivedTokenResponse.accessToken}")
 
-                listOf(
-                    launch {
-                        fetchAndStoreUserInfoAndToken(
-                            accessToken = shortLivedTokenResponse.accessToken,
-                            instagramUserId = shortLivedTokenResponse.userId,
-                            influencerEmail = influencer.email
-                        )
-                    },
-                    launch {
-                        fetchAndStoreUserPosts(
-                            accessToken = shortLivedTokenResponse.accessToken,
-                            instagramUserId = shortLivedTokenResponse.userId,
-                            influencerEmail = influencer.email
-                        )
-                    }
-                ).joinAll()
+        val result = igService.getShortLivedToken(
+            clientId = clientId,
+            clientSecret = appSecret,
+            grantType = IgCodeGrantType.authCodeGrantType,
+            redirectUri = redirectUri,
+            code = request.instagramAuthCode
+        )
 
-            } catch (e: ExposedSQLException) {
-                logger.error(e) { "error with database transaction" }
-                throw StatusException(Status.UNKNOWN)
-            } catch (e: HttpException) {
-                logger.error(e) { "error with API calls to Instagram" }
-                if (e.code() == 403) {
-                    throw StatusException(Status.PERMISSION_DENIED)
-                } else {
-                    throw StatusException(Status.INVALID_ARGUMENT)
+        when (result) {
+            is IgServiceResult.PermissionError -> throw StatusException(Status.PERMISSION_DENIED)
+            is IgServiceResult.ExpiredError -> throw StatusException(Status.INVALID_ARGUMENT)
+            is IgServiceResult.Unknown -> throw StatusException(Status.UNKNOWN)
+            is IgServiceResult.Success -> {
+                println("asdhfasd: ${result.response.accessToken}")
+                withContext(Dispatchers.IO) {
+                    listOf(
+                        launch {
+                            fetchAndStoreUserInfoAndToken(
+                                accessToken = result.response.accessToken,
+                                instagramUserId = result.response.userId,
+                                influencerEmail = influencer.email
+                            )
+                        },
+                        launch {
+                            fetchAndStoreUserPosts(
+                                accessToken = result.response.accessToken,
+                                instagramUserId = result.response.userId,
+                                influencerEmail = influencer.email
+                            )
+                        }
+                    ).joinAll()
                 }
-            } catch (e: Exception) {
-                logger.error(e) { "unknown error while connecting instagram" }
-                throw StatusException(Status.UNKNOWN)
             }
         }
 
