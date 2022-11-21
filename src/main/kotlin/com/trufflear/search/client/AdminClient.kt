@@ -18,13 +18,15 @@ class AdminClient(private val channel: ManagedChannel) : Closeable {
     suspend fun signup() {
         val signupRequest = signupRequest {  }
         val getAccountRequest = getInfluencerPublicProfileRequest {
-            username = "cooking_bobo"
+            username = "oyster_bamboo"
         }
         val request = connectIgUserMediaRequest {
-            instagramAuthCode = "AQCW5vADY2sytFAN9nuYTjqSkHYc3x9vNO0oxd6Ulrce5b9UAvmVEduo-L7cq1sohS32OvEdVr-XAGbJm866a9nequmhAIR54x3MRccTjpOR4va71_SmpsVVDXIB057tC5vQPSXG51GkW8n6ERu2Ca4wfrZIiBJ8WDUjJpqfxO7QV0AP6Z1fFDrn8eKw2LKIM2oZ2X2p33aUINulKIxY9zFj8_inEz9WJFfdf2kFciuPmQ"
+            instagramAuthCode = "AQC7AKR8Fxp6YVuJTQ2XgsTIO35pC8J9G7HtOrSRsHQnjclsp5NlQJgzAbp87wieP02Riawn1XXepgYB-kCRbXXHfBjEv27gHzrv4P9lC7pTz0F9H3v0nJ3pN8CXZktLfQA53taN2BCx_h_2tRJWDbfSHAdmK8VL9X-bk35MigDDM4ik8O0BO-dSok88YN0kRA7VQUvLB73zF817VvlQ1KiZrci0rhXLoVusn7hlHoBIyQ"
         }
 
 
+        //val response = accountIgStub.getIgAuthorizationWindowUrl(getIgAuthorizationWindowUrlRequest {  })
+        //val response = accountStub.signup(signupRequest)
         //val response = accountStub.updateProfile(updateProfileRequest)
         //val response = accountIgStub.connectIgUserMedia(request)
         val response = publicStub.getInfluencerPublicProfile(getAccountRequest)
@@ -43,11 +45,11 @@ suspend fun main() {
 
     val metadata = Metadata()
 
-    metadata.put(Metadata.Key.of("id-token", Metadata.ASCII_STRING_MARSHALLER), "eyJraWQiOiJ3R1d3NVRVRVdMRW9na2dSTUJOcGE4dnlLVjV5ZWlaT2h6TWRJV1FNdVJFPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIxNjRlYzM5YS1iYTg3LTQ5MGUtYjg5Yi0yYWRlYTlhZTUxMGYiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLXdlc3QtMS5hbWF6b25hd3MuY29tXC91cy13ZXN0LTFfNEVROERzNkpjIiwiY29nbml0bzp1c2VybmFtZSI6IjE2NGVjMzlhLWJhODctNDkwZS1iODliLTJhZGVhOWFlNTEwZiIsIm9yaWdpbl9qdGkiOiJjZDk4NTRhZC01MjBjLTQxZGItYTE3NS0xNjE0ZWE4ZGJkZmUiLCJhdWQiOiIyYXVwMWR2cTFrYTUyMmlqdGVtcmEybzhzcSIsImV2ZW50X2lkIjoiYWEyMjVjYWMtNjE1My00NzI2LTljY2MtNDU5M2IwMDAwMzc2IiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE2Njg4MTI1NDYsIm5hbWUiOiJZYWZlbmcgV2FuZyIsImV4cCI6MTY2ODgxNjE0NiwiaWF0IjoxNjY4ODEyNTQ2LCJqdGkiOiIxZmYxMGY3ZS1lZGVmLTQyYjktOWIyNS03YzZhNTI2MDdjYTIiLCJlbWFpbCI6ImVjaGFuZ0BseWZ0LmNvbSJ9.O5yYDW4zbxUR0qfgMJnMtVdy02YAsFAju5yE1Pr9ytBxPptKMX7NrVHbV6c_MnHgphjKmIrmSmNYjYXCnK6XnbxPDQkpMEglOJEjs5HW0EeFcakjl96W6QliBttvfzXbwBuEzHlyz68WS7sz2Qz62q9VzVI-sKjp0hr_RpxWHFQiDOW4oG7bNzcpYiCVPf72TDTMXnl-0B23O5b56L3_Nj0nadziVSStxF4Pj0eHetEbj_bgacV7_HMyWZv6-dMpo7uAq_8gx5wrRnTsPvu_tA0Fe9hVv04CV8GRp0ej4mxMguN6hfjj7nygE51LhykbpALZsmuZu7cvvUM_jcYI4A")
+    metadata.put(Metadata.Key.of("id-token", Metadata.ASCII_STRING_MARSHALLER), "eyJraWQiOiJ3R1d3NVRVRVdMRW9na2dSTUJOcGE4dnlLVjV5ZWlaT2h6TWRJV1FNdVJFPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI5MWFkZWZiZS1hODhhLTRmYjctOWE2MS00NDRkNTNhYzMzYTMiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLXdlc3QtMS5hbWF6b25hd3MuY29tXC91cy13ZXN0LTFfNEVROERzNkpjIiwiY29nbml0bzp1c2VybmFtZSI6IjkxYWRlZmJlLWE4OGEtNGZiNy05YTYxLTQ0NGQ1M2FjMzNhMyIsIm9yaWdpbl9qdGkiOiIwNTk5OTY3ZC03NmUzLTRkYjYtYjZkYi1mZGJlYWUxMDEyZTEiLCJhdWQiOiIyYXVwMWR2cTFrYTUyMmlqdGVtcmEybzhzcSIsImV2ZW50X2lkIjoiNDJiZWRiMTktNmFiNS00ZTIyLTljNWEtYzQ4MzI4YTI4ZWVmIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE2NjkwNzA0NjIsIm5hbWUiOiJFdGhhbiBDaGFuZyIsImV4cCI6MTY2OTA3NDA2MiwiaWF0IjoxNjY5MDcwNDYyLCJqdGkiOiJhNjNhMWU1Yy00YzQ1LTRiMDctYTc5OS1lMDY3MjA1YmI1NTEiLCJlbWFpbCI6InRlYW1AdHJ1ZmZsZWFyLmNvbSJ9.sJqmc-WSHR2wkAbB_lCI-kytLttJuHTc-dZRnTrg2KexqR1abgE-fvqwT5vnaU525L7py1eRtRi1PWWh-DJcpFhq7fUjFwl4a8O7k2SEoeyHhzQQRAcvmGVG4KHSbfdgnS4i0VXuDiToWPoRsrGwqN1__w65tp4vM15EE3aikZFNDBAd-IOdBigM1IrhP7w0skx9kQTpyacjIpogEK8u7xuIYqrA4DmJzZ0QzxG37CQVT238aWoSp05qDGTaHbct7v6l-rvel7_3RxREH5h0Vrk_dj4uQD8nTQBXGA6oS9zrxXfNkQHW8guSQMFPLGAtD4hdrq1YVyqTVAoR9u4ssg")
 
     val channel = ManagedChannelBuilder
         .forAddress("localhost", port)
-       // .intercept(MetadataUtils.newAttachHeadersInterceptor(metadata))
+        .intercept(MetadataUtils.newAttachHeadersInterceptor(metadata))
         .usePlaintext()
         .executor(Dispatchers.IO.asExecutor())
         .build()

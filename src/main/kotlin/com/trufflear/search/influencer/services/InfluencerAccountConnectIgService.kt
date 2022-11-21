@@ -6,14 +6,20 @@ import com.trufflear.search.config.IgMediaFields
 import com.trufflear.search.config.appSecret
 import com.trufflear.search.config.clientId
 import com.trufflear.search.config.redirectUri
-import com.trufflear.search.influencer.*
-import com.trufflear.search.influencer.database.tables.InfluencerTable
+import com.trufflear.search.influencer.ConnectIgUserMediaRequest
+import com.trufflear.search.influencer.ConnectIgUserMediaResponse
+import com.trufflear.search.influencer.GetIgAuthorizationWindowUrlRequest
+import com.trufflear.search.influencer.InfluencerAccountConnectIgServiceGrpcKt
+import com.trufflear.search.influencer.InfluencerCoroutineElement
+import com.trufflear.search.influencer.InfluencerPostService
+import com.trufflear.search.influencer.connectIgUserMediaResponse
 import com.trufflear.search.influencer.database.tables.PostTable
+import com.trufflear.search.influencer.getIgAuthorizationWindowUrlResponse
 import com.trufflear.search.influencer.network.model.IgPost
-import com.trufflear.search.influencer.network.service.IgAuthService
-import com.trufflear.search.influencer.network.service.IgGraphService
+import com.trufflear.search.influencer.network.model.IgResponse
 import com.trufflear.search.influencer.network.service.IgServiceResult
 import com.trufflear.search.influencer.network.service.InstagramService
+import com.trufflear.search.influencer.repositories.InfluencerPostRepository
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.util.CaptionParser
 import com.trufflear.search.influencer.util.igDateFormat
@@ -21,7 +27,6 @@ import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.coroutines.*
 import mu.KotlinLogging
-import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -31,11 +36,8 @@ import javax.sql.DataSource
 import kotlin.coroutines.coroutineContext
 
 class InfluencerAccountConnectIgService (
-    private val dataSource: DataSource,
-    private val igAuthService: IgAuthService,
-    private val igGraphService: IgGraphService,
-    private val captionParser: CaptionParser,
     private val influencerProfileRepository: InfluencerProfileRepository,
+    private val influencerPostService: InfluencerPostService,
     private val igService: InstagramService
 ) : InfluencerAccountConnectIgServiceGrpcKt.InfluencerAccountConnectIgServiceCoroutineImplBase() {
 
@@ -69,9 +71,8 @@ class InfluencerAccountConnectIgService (
         )
 
         when (result) {
-            is IgServiceResult.PermissionError -> throw StatusException(Status.PERMISSION_DENIED)
-            is IgServiceResult.ExpiredError -> throw StatusException(Status.INVALID_ARGUMENT)
-            is IgServiceResult.Unknown -> throw StatusException(Status.UNKNOWN)
+            is IgServiceResult.PermissionError, IgServiceResult.ExpiredError,
+            IgServiceResult.Unknown -> handleIgErrorResult(result)
             is IgServiceResult.Success -> {
                 println("asdhfasd: ${result.response.accessToken}")
                 withContext(Dispatchers.IO) {
@@ -98,40 +99,49 @@ class InfluencerAccountConnectIgService (
         return connectIgUserMediaResponse { }
     }
 
+    private fun handleIgErrorResult(result: IgServiceResult<IgResponse>) {
+        when (result) {
+            is IgServiceResult.PermissionError -> throw StatusException(Status.PERMISSION_DENIED)
+            is IgServiceResult.ExpiredError -> throw StatusException(Status.INVALID_ARGUMENT)
+            is IgServiceResult.Unknown -> throw StatusException(Status.UNKNOWN)
+            is IgServiceResult.Success -> Unit
+        }
+    }
+
     private suspend fun fetchAndStoreUserInfoAndToken(
         accessToken: String,
         instagramUserId: String,
         influencerEmail: String
     ) {
         logger.info ("getting long lived access token for user: $influencerEmail")
-        val longLivedTokenResponse = igGraphService.getLongLivedAccessToken(
+        val tokenResult = igService.getLongLivedAccessToken(
             clientSecret = appSecret,
             grantType = IgCodeGrantType.exchangeTokenType,
             accessToken = accessToken
         )
 
-        logger.info ("getting user info for $influencerEmail")
-        val igUserInfo = igGraphService.getUser(
-            userId = instagramUserId,
-            fields = getUserInfoFieldsString(),
-            accessToken = accessToken
-        )
+        when (tokenResult) {
+            is IgServiceResult.Success -> {
+                logger.info ("getting user info for $influencerEmail")
+                val userResult = igService.getUser(
+                    userId = instagramUserId,
+                    fields = getUserInfoFieldsString(),
+                    accessToken = accessToken
+                )
 
-        transaction(Database.connect(dataSource)) {
-            addLogger(StdOutSqlLogger)
-
-            InfluencerTable.update({ InfluencerTable.email eq influencerEmail}) {
-                it[igUserId] = instagramUserId
-                it[igLongLivedAccessToken] = longLivedTokenResponse.accessToken
-                it[igLongLivedAccessTokenExpiresIn] = longLivedTokenResponse.expiresIn.toLongOrNull() ?: 0
-                it[igMediaCount] = igUserInfo.mediaCount
-                it[igAccountType] = igUserInfo.accountType
+                when (userResult) {
+                    is IgServiceResult.Success -> {
+                        influencerProfileRepository.upsertInfluencerIgInfo(
+                            tokenResponse = tokenResult.response,
+                            igUser = userResult.response,
+                            influencerEmail = influencerEmail,
+                            instagramUserId = instagramUserId
+                        )
+                    }
+                    else -> handleIgErrorResult(userResult)
+                }
             }
-
-            InfluencerTable.update({ InfluencerTable.email eq influencerEmail and (InfluencerTable.username eq "") }) {
-                it[username] = igUserInfo.userName
-                it[profileTitle] = igUserInfo.userName
-            }
+            else -> handleIgErrorResult(tokenResult)
         }
     }
 
@@ -147,29 +157,11 @@ class InfluencerAccountConnectIgService (
             instagramUserId = instagramUserId
         )
 
-        transaction(Database.connect(dataSource)) {
-            addLogger(StdOutSqlLogger)
+        influencerPostService.handleIncomingPosts(
+            influencerEmail = influencerEmail,
+            igPosts = igPosts
+        ) ?: throw StatusException(Status.UNKNOWN)
 
-            val existingPostIgIdSet = PostTable.slice(PostTable.igId)
-                .select { PostTable.influencerEmail eq influencerEmail }
-                .map { it[PostTable.igId] }
-                .toHashSet()
-
-            val incomingPostsRemovingNewLine = igPosts.map {
-                it.copy(
-                    caption = it.caption?.replace("\n", " ")
-                )
-            }
-
-            deleteOldPosts(existingPostIgIdSet.minus(incomingPostsRemovingNewLine.map { it.id }.toHashSet()))
-            insertNewPosts(
-                newPosts = incomingPostsRemovingNewLine
-                    .filter { existingPostIgIdSet.contains(it.id).not() },
-                influencerEmail = influencerEmail
-            )
-
-            updatePosts(incomingPostsRemovingNewLine.filter { existingPostIgIdSet.contains(it.id) })
-        }
     }
 
     private suspend fun getAllUserPosts(
@@ -179,83 +171,30 @@ class InfluencerAccountConnectIgService (
         val igPosts = mutableListOf<IgPost>()
 
         var afterToken: String? = null
-        var nextLink: String?
+        var nextLink: String? = null
         do {
-            val igUserMedia = igGraphService.getUserMedia(
+            val mediaResult = igService.getUserMedia(
                 userId = instagramUserId,
                 limit = fetchingLimit,
                 fields = getUserMediaFieldsString(),
                 accessToken = accessToken,
                 after = afterToken
             )
-            igPosts.addAll(igUserMedia.data)
 
-            nextLink = igUserMedia.paging?.next
-            afterToken = igUserMedia.paging?.cursors?.after
-
+            when (mediaResult) {
+                is IgServiceResult.Success -> {
+                    igPosts.addAll(mediaResult.response.data)
+                    nextLink = mediaResult.response.paging?.next
+                    afterToken = mediaResult.response.paging?.cursors?.after
+                }
+                else -> {
+                    handleIgErrorResult(mediaResult)
+                }
+            }
         } while (nextLink != null && afterToken != null)
 
         return igPosts
     }
-
-    private fun deleteOldPosts(oldPostIgIds: Set<String>) {
-        PostTable.deleteWhere { igId inList oldPostIgIds }
-    }
-
-    private fun updatePosts(postsToUpdate: List<IgPost>) {
-        postsToUpdate.forEach { post ->
-            PostTable.update({ PostTable.igId eq post.id }) {
-                post.caption?.let { cap ->
-                    it[caption] = cap
-                    it[hashtags] = captionParser.getHashTags(cap)
-                    it[mentions] = captionParser.getMentions(cap)
-                }
-                it[permalink] = post.permalink
-            }
-        }
-    }
-
-    private fun insertNewPosts(
-        newPosts: List<IgPost>,
-        influencerEmail: String
-    ){
-        PostTable.batchInsert(newPosts) { post ->
-            this[PostTable.igId] = post.id
-            this[PostTable.influencerEmail] = influencerEmail
-            this[PostTable.username] = post.username
-            post.caption?.let {
-                this[PostTable.caption] = it
-                this[PostTable.hashtags] = captionParser.getHashTags(it)
-                this[PostTable.mentions] = captionParser.getMentions(it)
-            }
-            this[PostTable.permalink] = post.permalink
-            this[PostTable.mediaType] = post.mediaType
-            this[PostTable.mediaUrl] = post.mediaUrl
-            this[PostTable.thumbnailUrl] = getCorrectThumbnailUrl(
-                thumbnailUrl = post.thumbnailUrl,
-                mediaUrl = post.mediaUrl,
-                mediaType = post.mediaType
-            )
-            this[PostTable.createdAtTimestamp] = convertIgTimeToInstant(post.timestamp)
-        }
-    }
-
-    private fun convertIgTimeToInstant(dateTimeString: String): Instant {
-        val createdAtTime = igDateFormat.parse(dateTimeString).time
-        return Timestamp(createdAtTime).toInstant()
-    }
-
-    private fun getCorrectThumbnailUrl(
-        thumbnailUrl: String?,
-        mediaUrl: String,
-        mediaType: String
-    ): String =
-        if (mediaType == IgMediaType.IMAGE.name || mediaType == IgMediaType.CAROUSEL_ALBUM.name) {
-            mediaUrl
-        } else if (mediaType == IgMediaType.VIDEO.name && thumbnailUrl != null) {
-            thumbnailUrl
-        } else { "" }
-
 
     private fun getUserMediaFieldsString() = listOf(
         IgMediaFields.caption,

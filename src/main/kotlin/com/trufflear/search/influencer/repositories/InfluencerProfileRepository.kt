@@ -1,8 +1,11 @@
 package com.trufflear.search.influencer.repositories
 
 import com.trufflear.search.influencer.database.tables.InfluencerTable
+import com.trufflear.search.influencer.domain.CallSuccess
 import com.trufflear.search.influencer.domain.Influencer
 import com.trufflear.search.influencer.domain.InfluencerPublicProfile
+import com.trufflear.search.influencer.network.model.IgLongLivedTokenResponse
+import com.trufflear.search.influencer.network.model.IgUserInfo
 import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.coroutines.Dispatchers
@@ -13,6 +16,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -77,9 +81,9 @@ class InfluencerProfileRepository(
                 if (e.sqlState == "23505" || e.sqlState == "23000") {
                     logger.error("user already exists")
                     InsertResult.UserAlreadyExists
+                } else {
+                    InsertResult.Unknown
                 }
-
-                InsertResult.Unknown
             }
         }
 
@@ -107,7 +111,7 @@ class InfluencerProfileRepository(
         title: String,
         professionCategory: String,
         description: String
-    ): Unit? =
+    ): CallSuccess? =
         withContext(Dispatchers.IO) {
             try {
                 transaction(Database.connect(dataSource)) {
@@ -119,12 +123,44 @@ class InfluencerProfileRepository(
                         it[bioDescription] = description
                     }
                 }
-                Unit
+                CallSuccess
             } catch (e: Exception) {
                 logger.error(e) { "error updating influencer profile" }
                 null
             }
         }
+
+    internal suspend fun upsertInfluencerIgInfo(
+        tokenResponse: IgLongLivedTokenResponse,
+        igUser: IgUserInfo,
+        influencerEmail: String,
+        instagramUserId: String
+    ): Unit? =
+        withContext(Dispatchers.IO) {
+            try {
+                transaction(Database.connect(dataSource)) {
+                    addLogger(StdOutSqlLogger)
+
+                    InfluencerTable.update({ InfluencerTable.email eq influencerEmail}) {
+                        it[igUserId] = instagramUserId
+                        it[igLongLivedAccessToken] = tokenResponse.accessToken
+                        it[igLongLivedAccessTokenExpiresIn] = tokenResponse.expiresIn.toLongOrNull() ?: 0
+                        it[igMediaCount] = igUser.mediaCount
+                        it[igAccountType] = igUser.accountType
+                    }
+
+                    InfluencerTable.update({ InfluencerTable.email eq influencerEmail and (InfluencerTable.username eq "") }) {
+                        it[username] = igUser.userName
+                        it[profileTitle] = igUser.userName
+                    }
+                }
+                Unit
+            } catch (e: Exception) {
+                logger.error(e) { "error upserting influencer Ig info" }
+                null
+            }
+        }
+
 
 }
 

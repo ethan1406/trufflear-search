@@ -27,11 +27,11 @@ data class Cursors(
 data class IgUserMedia(
     @SerializedName("data") val data: List<IgPost>,
     @SerializedName("paging") val paging: Paging?
-)
+): IgResponse
 
 data class IgUserInfo(
     @SerializedName("id") val userId: String,
     @SerializedName("username") val userName: String,
     @SerializedName("account_type") val accountType: String,
     @SerializedName("media_count") val mediaCount: Int
-)
+): IgResponse

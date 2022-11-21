@@ -3,12 +3,15 @@ package com.trufflear.search
 import com.trufflear.search.config.igApiSubdomainBaseUrl
 import com.trufflear.search.config.igGraphSubdomainBaseUrl
 import com.trufflear.search.influencer.AccountInterceptor
+import com.trufflear.search.influencer.InfluencerPostService
 import com.trufflear.search.influencer.database.scripts.CreateInfluencerScript
 import com.trufflear.search.influencer.services.InfluencerAccountConnectIgService
 import com.trufflear.search.influencer.services.InfluencerAccountService
 import com.trufflear.search.influencer.network.service.IgAuthService
 import com.trufflear.search.influencer.network.service.IgGraphService
+import com.trufflear.search.influencer.network.service.InstagramService
 import com.trufflear.search.influencer.network.service.SearchIndexService
+import com.trufflear.search.influencer.repositories.InfluencerPostRepository
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.SearchIndexRepository
 import com.trufflear.search.influencer.services.InfluencerPublicProfileService
@@ -21,18 +24,14 @@ import io.grpc.ServerInterceptors
 import org.apache.log4j.BasicConfigurator
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import javax.sql.DataSource
 
 
 class TruffleSearchApplication(
     private val port: Int,
-    dataSource: DataSource,
-    igAuthService: IgAuthService,
-    igGraphService: IgGraphService,
-    captionParser: CaptionParser,
-    searchIndexService: SearchIndexService,
     influencerProfileRepository: InfluencerProfileRepository,
-    searchIndexRepository: SearchIndexRepository
+    searchIndexRepository: SearchIndexRepository,
+    influencerPostService: InfluencerPostService,
+    instagramService: InstagramService
 ) {
 
     val server: Server = ServerBuilder
@@ -42,7 +41,7 @@ class TruffleSearchApplication(
         )
         .addService(ServerInterceptors.intercept(
             InfluencerAccountConnectIgService(
-                dataSource, igAuthService, igGraphService, captionParser
+                influencerProfileRepository, influencerPostService, instagramService
             ), AccountInterceptor())
         )
         .addService(InfluencerPublicProfileService(influencerProfileRepository))
@@ -72,25 +71,24 @@ class TruffleSearchApplication(
 
 fun main() {
 
-    //CreateInfluencerScript.createInfluencer(datasource)
+    val datasource = getHikariDataSource()
+    CreateInfluencerScript.createInfluencer(datasource)
 
     BasicConfigurator.configure()
     val port = System.getenv("PORT")?.toInt() ?: 50051
 
-    val datasource = getHikariDataSource()
-    val service = SearchIndexService()
     val server = TruffleSearchApplication(
         port,
-        datasource,
-        igAuthService(),
-        igGraphService(),
-        CaptionParser(
-            hashTagRegex = "(#[^\\s\\\\]+)".toRegex(),
-            mentionTagRegex = "(@[a-zA-Z\\d-+_.]+)".toRegex(),
-        ),
-        service,
         InfluencerProfileRepository(datasource),
-        SearchIndexRepository(service)
+        SearchIndexRepository(SearchIndexService()),
+        InfluencerPostService(
+            InfluencerPostRepository(datasource),
+            CaptionParser(
+                hashTagRegex = "(#[^\\s\\\\]+)".toRegex(),
+                mentionTagRegex = "(@[a-zA-Z\\d-+_.]+)".toRegex(),
+            )
+        ),
+        InstagramService(igAuthService(), igGraphService(),)
     )
     server.start()
     server.blockUntilShutdown()

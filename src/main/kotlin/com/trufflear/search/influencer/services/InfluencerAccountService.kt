@@ -33,7 +33,9 @@ internal class InfluencerAccountService(
 
         when (influencerRepository.insertInfluencer(influencer)) {
             is InsertResult.Unknown -> throw StatusException(Status.UNKNOWN)
-            is InsertResult.UserAlreadyExists -> throw StatusException(Status.ALREADY_EXISTS)
+            is InsertResult.UserAlreadyExists -> {
+                throw StatusException(Status.ALREADY_EXISTS)
+            }
             is InsertResult.Success -> Unit
         }
 
