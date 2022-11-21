@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package influencer;
 
-import public "influencer_profile.proto";
+import "com/trufflear/search/influencer/influencer_profile.proto";
 
 option java_multiple_files = true;
 option java_package = "com.trufflear.search.influencer";
@@ -28,6 +28,7 @@ service InfluencerAccountService {
 
 message SignupRequest {}
 
+// Response can throw "user already exist" status exceptions
 message SignupResponse {}
 
 message UpdateProfileRequest {

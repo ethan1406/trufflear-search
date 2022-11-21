@@ -9,6 +9,8 @@ import com.trufflear.search.influencer.services.InfluencerAccountService
 import com.trufflear.search.influencer.network.service.IgAuthService
 import com.trufflear.search.influencer.network.service.IgGraphService
 import com.trufflear.search.influencer.network.service.SearchIndexService
+import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
+import com.trufflear.search.influencer.repositories.SearchIndexRepository
 import com.trufflear.search.influencer.services.InfluencerPublicProfileService
 import com.trufflear.search.influencer.util.CaptionParser
 import com.zaxxer.hikari.HikariConfig
@@ -28,20 +30,22 @@ class TruffleSearchApplication(
     igAuthService: IgAuthService,
     igGraphService: IgGraphService,
     captionParser: CaptionParser,
-    searchIndexService: SearchIndexService
+    searchIndexService: SearchIndexService,
+    influencerProfileRepository: InfluencerProfileRepository,
+    searchIndexRepository: SearchIndexRepository
 ) {
 
     val server: Server = ServerBuilder
         .forPort(port)
         .addService(ServerInterceptors.intercept(
-            InfluencerAccountService(dataSource, searchIndexService), AccountInterceptor())
+            InfluencerAccountService(influencerProfileRepository, searchIndexRepository), AccountInterceptor())
         )
         .addService(ServerInterceptors.intercept(
             InfluencerAccountConnectIgService(
                 dataSource, igAuthService, igGraphService, captionParser
             ), AccountInterceptor())
         )
-        .addService(InfluencerPublicProfileService(dataSource))
+        .addService(InfluencerPublicProfileService(influencerProfileRepository))
         .build()
 
     fun start() {
@@ -74,6 +78,7 @@ fun main() {
     val port = System.getenv("PORT")?.toInt() ?: 50051
 
     val datasource = getHikariDataSource()
+    val service = SearchIndexService()
     val server = TruffleSearchApplication(
         port,
         datasource,
@@ -83,7 +88,9 @@ fun main() {
             hashTagRegex = "(#[^\\s\\\\]+)".toRegex(),
             mentionTagRegex = "(@[a-zA-Z\\d-+_.]+)".toRegex(),
         ),
-        SearchIndexService()
+        service,
+        InfluencerProfileRepository(datasource),
+        SearchIndexRepository(service)
     )
     server.start()
     server.blockUntilShutdown()
