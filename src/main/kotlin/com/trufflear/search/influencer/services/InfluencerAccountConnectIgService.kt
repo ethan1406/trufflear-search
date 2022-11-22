@@ -13,26 +13,16 @@ import com.trufflear.search.influencer.InfluencerAccountConnectIgServiceGrpcKt
 import com.trufflear.search.influencer.InfluencerCoroutineElement
 import com.trufflear.search.influencer.InfluencerPostService
 import com.trufflear.search.influencer.connectIgUserMediaResponse
-import com.trufflear.search.influencer.database.tables.PostTable
 import com.trufflear.search.influencer.getIgAuthorizationWindowUrlResponse
 import com.trufflear.search.influencer.network.model.IgPost
 import com.trufflear.search.influencer.network.model.IgResponse
 import com.trufflear.search.influencer.network.service.IgServiceResult
 import com.trufflear.search.influencer.network.service.InstagramService
-import com.trufflear.search.influencer.repositories.InfluencerPostRepository
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
-import com.trufflear.search.influencer.util.CaptionParser
-import com.trufflear.search.influencer.util.igDateFormat
 import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.coroutines.*
 import mu.KotlinLogging
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
-import org.jetbrains.exposed.sql.transactions.transaction
-import java.sql.Timestamp
-import java.time.Instant
-import javax.sql.DataSource
 import kotlin.coroutines.coroutineContext
 
 class InfluencerAccountConnectIgService (
@@ -58,9 +48,9 @@ class InfluencerAccountConnectIgService (
 
 
         logger.info { "checking if user exists" }
-        influencerProfileRepository.checkIfInfluencerExists(influencer.email)
-            ?: throw StatusException(Status.PERMISSION_DENIED.withDescription("user must sign up first"))
-
+        if (influencerProfileRepository.userExists(influencer.email).not()) {
+            throw StatusException(Status.PERMISSION_DENIED.withDescription("user must sign up first"))
+        }
 
         val result = igService.getShortLivedToken(
             clientId = clientId,
@@ -136,7 +126,7 @@ class InfluencerAccountConnectIgService (
                             igUser = userResult.response,
                             influencerEmail = influencerEmail,
                             instagramUserId = instagramUserId
-                        )
+                        ) ?: throw StatusException(Status.UNKNOWN)
                     }
                     else -> handleIgErrorResult(userResult)
                 }

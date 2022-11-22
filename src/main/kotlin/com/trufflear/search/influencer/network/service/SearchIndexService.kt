@@ -10,7 +10,6 @@ import org.typesense.model.CollectionSchema
 import org.typesense.model.Field
 import org.typesense.resources.Node
 import java.time.Duration
-import kotlin.math.log
 
 class SearchIndexService {
     private val logger = KotlinLogging.logger {}

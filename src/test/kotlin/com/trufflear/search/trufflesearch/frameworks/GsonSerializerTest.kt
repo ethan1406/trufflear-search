@@ -8,8 +8,9 @@ import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import java.math.BigInteger
 import java.util.*
+import kotlin.collections.ArrayList
 
-class GsonSerializerTest() {
+class GsonSerializerTest {
     private val gsonSerializer = GsonSerializer(
         GsonBuilder()
             .serializeSpecialFloatingPointValues()

@@ -6,14 +6,11 @@ import com.trufflear.search.influencer.domain.Influencer
 import com.trufflear.search.influencer.domain.InfluencerPublicProfile
 import com.trufflear.search.influencer.network.model.IgLongLivedTokenResponse
 import com.trufflear.search.influencer.network.model.IgUserInfo
-import io.grpc.Status
-import io.grpc.StatusException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.and
@@ -87,22 +84,18 @@ class InfluencerProfileRepository(
             }
         }
 
-    internal suspend fun checkIfInfluencerExists(email: String): Unit? =
+    internal suspend fun userExists(email: String): Boolean =
         withContext(Dispatchers.IO) {
             try {
                 transaction(Database.connect(dataSource)) {
                     addLogger(StdOutSqlLogger)
 
                     val userNotCreated = InfluencerTable.select { InfluencerTable.email eq email }.empty()
-                    if (userNotCreated) {
-                        null
-                    } else {
-                        Unit
-                    }
+                    userNotCreated.not()
                 }
             } catch (e: Exception) {
                 logger.error(e) { "error checking if influencer exists for $email" }
-                null
+                false
             }
         }
 
@@ -135,7 +128,7 @@ class InfluencerProfileRepository(
         igUser: IgUserInfo,
         influencerEmail: String,
         instagramUserId: String
-    ): Unit? =
+    ): CallSuccess? =
         withContext(Dispatchers.IO) {
             try {
                 transaction(Database.connect(dataSource)) {
@@ -154,7 +147,7 @@ class InfluencerProfileRepository(
                         it[profileTitle] = igUser.userName
                     }
                 }
-                Unit
+                CallSuccess
             } catch (e: Exception) {
                 logger.error(e) { "error upserting influencer Ig info" }
                 null

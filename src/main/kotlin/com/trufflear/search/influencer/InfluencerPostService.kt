@@ -35,7 +35,6 @@ class InfluencerPostService(
         ) ?: return null
 
         updatePosts(
-            influencerEmail = influencerEmail,
             existingPostIgIds = existingPostIgIds,
             incomingPostIgIds = incomingPostIds,
             incomingPostMap = incomingPostMap
@@ -63,7 +62,6 @@ class InfluencerPostService(
     }
 
     private suspend fun updatePosts(
-        influencerEmail: String,
         existingPostIgIds: Set<String>,
         incomingPostIgIds: Set<String>,
         incomingPostMap: Map<String, IgPost>

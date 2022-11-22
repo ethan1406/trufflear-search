@@ -54,8 +54,9 @@ internal class InfluencerAccountService(
             ?: throw StatusException(Status.UNAUTHENTICATED)
 
 
-        influencerRepository.checkIfInfluencerExists(influencer.email)
-            ?: throw StatusException(Status.PERMISSION_DENIED.withDescription("user must sign up first"))
+        if (influencerRepository.userExists(influencer.email).not()) {
+            throw StatusException(Status.PERMISSION_DENIED.withDescription("user must sign up first"))
+        }
 
         influencerRepository.updateInfluencerProfile(
             influencerEmail = influencer.email,
