@@ -16,6 +16,8 @@ import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.SearchIndexRepository
 import com.trufflear.search.influencer.services.InfluencerPublicProfileService
 import com.trufflear.search.influencer.util.CaptionParser
+import com.trufflear.search.influencer.util.hashTagRegex
+import com.trufflear.search.influencer.util.mentionTagRegex
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.grpc.Server
@@ -84,8 +86,8 @@ fun main() {
         InfluencerPostService(
             InfluencerPostRepository(datasource),
             CaptionParser(
-                hashTagRegex = "(#[^\\s\\\\]+)".toRegex(),
-                mentionTagRegex = "(@[a-zA-Z\\d-+_.]+)".toRegex(),
+                hashTagRegex = hashTagRegex,
+                mentionTagRegex = mentionTagRegex,
             )
         ),
         InstagramService(igAuthService(), igGraphService(),)

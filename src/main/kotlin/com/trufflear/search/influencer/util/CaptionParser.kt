@@ -1,5 +1,8 @@
 package com.trufflear.search.influencer.util
 
+val hashTagRegex = "(#[^\\s\\\\]+)".toRegex()
+val mentionTagRegex = "(@[a-zA-Z\\d-+_.]+)".toRegex()
+
 class CaptionParser(
     private val hashTagRegex: Regex,
     private val mentionTagRegex: Regex

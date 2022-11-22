@@ -155,6 +155,25 @@ class InfluencerProfileRepository(
         }
 
 
+    internal suspend fun setProfileLive(
+        setLive: Boolean,
+        influencerEmail: String
+    ): CallSuccess? =
+        withContext(Dispatchers.IO) {
+            try {
+                transaction(Database.connect(dataSource)) {
+                    addLogger(StdOutSqlLogger)
+
+                    InfluencerTable.update({ InfluencerTable.email eq influencerEmail}) {
+                        it[isProfileLive] = setLive
+                    }
+                }
+                CallSuccess
+            } catch (e: Exception) {
+                logger.error(e) { "error setting live to $setLive for influencer profile $influencerEmail" }
+                null
+            }
+        }
 }
 
 sealed class ProfileResult {

@@ -5,41 +5,45 @@ import com.trufflear.search.influencer.mappers.toPostDomain
 import com.trufflear.search.influencer.network.model.IgPost
 import com.trufflear.search.influencer.repositories.InfluencerPostRepository
 import com.trufflear.search.influencer.util.CaptionParser
+import mu.KotlinLogging
 
 class InfluencerPostService(
     private val repository: InfluencerPostRepository,
     private val captionParser: CaptionParser,
 ) {
 
+    private val logger = KotlinLogging.logger {}
+
     suspend fun handleIncomingPosts(
         influencerEmail: String,
         igPosts: List<IgPost>,
     ): CallSuccess? {
-        val incomingPosts = getPostsWithoutNewLine(igPosts)
-        val incomingPostIds = incomingPosts.map { it.id }.toHashSet()
-        val incomingPostMap = incomingPosts.associateBy { it.id }
+        if (igPosts.isNotEmpty()) {
+            val incomingPosts = getPostsWithoutNewLine(igPosts)
+            val incomingPostIds = incomingPosts.map { it.id }.toHashSet()
+            val incomingPostMap = incomingPosts.associateBy { it.id }
 
-        val existingPostIgIds = repository.getAllPostIgIds(influencerEmail)
-            ?: return null
+            val existingPostIgIds = repository.getAllPostIgIds(influencerEmail)
+                ?: return null
 
-        deleteOldPosts(
-            existingPostIgIds = existingPostIgIds,
-            incomingPostIgIds = incomingPostIds
-        ) ?: return null
+            deleteOldPosts(
+                existingPostIgIds = existingPostIgIds,
+                incomingPostIgIds = incomingPostIds
+            ) ?: return null
 
-        insertNewPosts(
-            influencerEmail = influencerEmail,
-            existingPostIgIds = existingPostIgIds,
-            incomingPostIgIds = incomingPostIds,
-            incomingPostMap = incomingPostMap
-        ) ?: return null
+            insertNewPosts(
+                influencerEmail = influencerEmail,
+                existingPostIgIds = existingPostIgIds,
+                incomingPostIgIds = incomingPostIds,
+                incomingPostMap = incomingPostMap
+            ) ?: return null
 
-        updatePosts(
-            existingPostIgIds = existingPostIgIds,
-            incomingPostIgIds = incomingPostIds,
-            incomingPostMap = incomingPostMap
-        ) ?: return null
-
+            updatePosts(
+                existingPostIgIds = existingPostIgIds,
+                incomingPostIgIds = incomingPostIds,
+                incomingPostMap = incomingPostMap
+            ) ?: return null
+        }
         return CallSuccess
     }
 
@@ -52,13 +56,17 @@ class InfluencerPostService(
     ): CallSuccess? {
 
         val newPosts = incomingPostIgIds.minus(existingPostIgIds).mapNotNull { igId ->
-            incomingPostMap[igId]?.toPostDomain(captionParser)
+            incomingPostMap[igId]?.toPostDomain(captionParser, logger)
         }
 
-        return repository.insertNewPosts(
-            newPosts = newPosts,
-            influencerEmail = influencerEmail
-        )
+        return if (newPosts.isNotEmpty()) {
+            repository.insertNewPosts(
+                newPosts = newPosts,
+                influencerEmail = influencerEmail
+            )
+        } else {
+            CallSuccess
+        }
     }
 
     private suspend fun updatePosts(
@@ -66,20 +74,32 @@ class InfluencerPostService(
         incomingPostIgIds: Set<String>,
         incomingPostMap: Map<String, IgPost>
     ): CallSuccess? {
-        val postsToUpdate = incomingPostIgIds.union(existingPostIgIds).mapNotNull { igId ->
-            incomingPostMap[igId]?.toPostDomain(captionParser)
+        val postsToUpdate = incomingPostIgIds.intersect(existingPostIgIds).mapNotNull { igId ->
+            incomingPostMap[igId]?.toPostDomain(captionParser, logger)
         }
 
-        return repository.updatePosts(postsToUpdate)
+        return if (postsToUpdate.isNotEmpty()) {
+            repository.updatePosts(postsToUpdate)
+        } else {
+            CallSuccess
+        }
     }
 
     private suspend fun deleteOldPosts(
         existingPostIgIds: Set<String>,
         incomingPostIgIds: Set<String>
-    ): CallSuccess? =
-        repository.deletePosts(
-            existingPostIgIds.minus(incomingPostIgIds)
-        )
+    ): CallSuccess? {
+
+        val postsToDelete = existingPostIgIds.minus(incomingPostIgIds)
+        return if (postsToDelete.isNotEmpty()) {
+            repository.deletePosts(
+                existingPostIgIds.minus(incomingPostIgIds)
+            )
+        } else {
+            CallSuccess
+        }
+    }
+
 
     private fun getPostsWithoutNewLine(igPosts: List<IgPost>) =
         igPosts.map {

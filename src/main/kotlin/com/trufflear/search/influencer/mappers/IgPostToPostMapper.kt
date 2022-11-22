@@ -5,10 +5,12 @@ import com.trufflear.search.influencer.domain.Post
 import com.trufflear.search.influencer.network.model.IgPost
 import com.trufflear.search.influencer.util.CaptionParser
 import com.trufflear.search.influencer.util.igDateFormat
+import mu.KLogger
 import java.sql.Timestamp
+import java.text.ParseException
 import java.time.Instant
 
-internal fun IgPost.toPostDomain(captionParser: CaptionParser) =
+internal fun IgPost.toPostDomain(captionParser: CaptionParser, logger: KLogger) =
     Post(
         caption = caption.orEmpty(),
         hashTags = caption?.let { captionParser.getHashTags(it) }.orEmpty(),
@@ -23,7 +25,7 @@ internal fun IgPost.toPostDomain(captionParser: CaptionParser) =
         permalink = permalink,
         username = username,
         id = id,
-        timestamp = convertIgTimeToInstant(timestamp)
+        timestamp = convertIgTimeToInstant(timestamp, logger)
     )
 
 private fun getCorrectThumbnailUrl(
@@ -37,7 +39,11 @@ private fun getCorrectThumbnailUrl(
         thumbnailUrl
     } else { "" }
 
-private fun convertIgTimeToInstant(dateTimeString: String): Instant {
-    val createdAtTime = igDateFormat.parse(dateTimeString).time
-    return Timestamp(createdAtTime).toInstant()
-}
+private fun convertIgTimeToInstant(dateTimeString: String, logger: KLogger): Instant =
+    try {
+        val createdAtTime = igDateFormat.parse(dateTimeString).time
+        Timestamp(createdAtTime).toInstant()
+    } catch (e: ParseException) {
+        logger.error(e) { "error parsing date" }
+        Instant.now()
+    }
