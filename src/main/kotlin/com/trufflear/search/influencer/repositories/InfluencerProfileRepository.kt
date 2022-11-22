@@ -25,7 +25,7 @@ class InfluencerProfileRepository(
 ) {
     private val logger = KotlinLogging.logger {}
 
-    internal suspend fun getPublicProfile(username: String): ProfileResult =
+    internal suspend fun getPublicProfile(request: ProfileRequest): ProfileResult =
         withContext(Dispatchers.IO) {
             try {
                 transaction(Database.connect(dataSource)) {
@@ -37,7 +37,14 @@ class InfluencerProfileRepository(
                             InfluencerTable.bioDescription, InfluencerTable.profileImageUrl,
                             InfluencerTable.isProfileLive
                         )
-                        .select { InfluencerTable.username eq username }
+                        .select {
+                            when (request) {
+                                is ProfileRequest.WithEmail ->
+                                    InfluencerTable.email eq request.email
+                                is ProfileRequest.WithUsername ->
+                                    InfluencerTable.username eq request.username
+                            }
+                        }
                         .map {
                             InfluencerPublicProfile(
                                 profilePicUrl = it[InfluencerTable.profileImageUrl],
@@ -53,7 +60,7 @@ class InfluencerProfileRepository(
                     } ?: ProfileResult.NotFound
                 }
             } catch (e: Exception) {
-                logger.error(e) { "error getting profile for $username" }
+                logger.error(e) { "error getting profile for ${request.id}" }
                 ProfileResult.Unknown
             }
         }
@@ -174,6 +181,16 @@ class InfluencerProfileRepository(
                 null
             }
         }
+}
+
+sealed class ProfileRequest(open val id: String) {
+    data class WithEmail(
+        val email: String
+    ): ProfileRequest(email)
+
+    data class WithUsername(
+        val username: String
+    ): ProfileRequest(username)
 }
 
 sealed class ProfileResult {

@@ -3,9 +3,13 @@ package com.trufflear.search.trufflesearch.influencer
 import com.trufflear.search.influencer.InfluencerCoroutineElement
 import com.trufflear.search.influencer.domain.CallSuccess
 import com.trufflear.search.influencer.domain.Influencer
+import com.trufflear.search.influencer.domain.InfluencerPublicProfile
+import com.trufflear.search.influencer.getProfileRequest
 import com.trufflear.search.influencer.network.service.CollectionCreation
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.InsertResult
+import com.trufflear.search.influencer.repositories.ProfileRequest
+import com.trufflear.search.influencer.repositories.ProfileResult
 import com.trufflear.search.influencer.repositories.SearchIndexRepository
 import com.trufflear.search.influencer.services.InfluencerAccountService
 import com.trufflear.search.influencer.signupRequest
@@ -187,4 +191,52 @@ class InfluencerAccountServiceTest {
             )
         }
 
+    @Test
+    fun `get profile should return throw exception when not found`() =
+        runBlocking<Unit>(InfluencerCoroutineElement(influencer)) {
+            // ARRANGE
+            val profileRequest = ProfileRequest.WithEmail(influencer.email)
+            whenever(influencerProfileRepository.getPublicProfile(profileRequest))
+                .thenReturn(ProfileResult.NotFound)
+
+            val request = getProfileRequest {}
+
+            // ACT
+            val exception = assertThrows<StatusException> { service.getProfile(request) }
+
+            // ASSERT
+            assertThat(exception.status).isEqualTo(Status.UNKNOWN)
+            verify(influencerProfileRepository).getPublicProfile(profileRequest)
+        }
+
+    @Test
+    fun `get profile should return response when found`() =
+        runBlocking<Unit>(InfluencerCoroutineElement(influencer)) {
+            // ARRANGE
+            val bioDescription = "hi, how are you?"
+
+            val profileRequest = ProfileRequest.WithEmail(influencer.email)
+            whenever(influencerProfileRepository.getPublicProfile(profileRequest))
+                .thenReturn(
+                    ProfileResult.Success(
+                        InfluencerPublicProfile(
+                            profilePicUrl = "",
+                            profileTitle = "",
+                            professionCategory = "",
+                            bioDescription = bioDescription,
+                            isProfileLive = true
+                        )
+                    )
+                )
+
+            val request = getProfileRequest {}
+
+            // ACT
+            val response = service.getProfile(request)
+
+            // ASSERT
+            assertThat(response.isProfileLive).isTrue
+            assertThat(response.influencerProfile.bioDescription).isEqualTo(bioDescription)
+            verify(influencerProfileRepository).getPublicProfile(profileRequest)
+        }
 }

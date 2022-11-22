@@ -45,10 +45,11 @@ message GetProfileRequest {}
 message GetProfileResponse {
   // profile info of the influencer
   InfluencerProfile influencer_profile = 1;
+  bool is_profile_live = 2;
 }
 
 message SetProfileLiveRequest {
-  bool setProfileLive = 1;
+  bool set_profile_live = 1;
 }
 
 message SetProfileLiveResponse {}

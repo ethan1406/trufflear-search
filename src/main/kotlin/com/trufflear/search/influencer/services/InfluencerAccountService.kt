@@ -1,5 +1,7 @@
 package com.trufflear.search.influencer.services
 
+import com.trufflear.search.influencer.GetProfileRequest
+import com.trufflear.search.influencer.GetProfileResponse
 import com.trufflear.search.influencer.InfluencerAccountServiceGrpcKt
 import com.trufflear.search.influencer.InfluencerCoroutineElement
 import com.trufflear.search.influencer.SetProfileLiveRequest
@@ -8,9 +10,13 @@ import com.trufflear.search.influencer.SignupRequest
 import com.trufflear.search.influencer.SignupResponse
 import com.trufflear.search.influencer.UpdateProfileRequest
 import com.trufflear.search.influencer.UpdateProfileRequestResponse
+import com.trufflear.search.influencer.getProfileResponse
+import com.trufflear.search.influencer.influencerProfile
 import com.trufflear.search.influencer.network.service.CollectionCreation
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.InsertResult
+import com.trufflear.search.influencer.repositories.ProfileRequest
+import com.trufflear.search.influencer.repositories.ProfileResult
 import com.trufflear.search.influencer.repositories.SearchIndexRepository
 import com.trufflear.search.influencer.setProfileLiveResponse
 import com.trufflear.search.influencer.signupResponse
@@ -71,6 +77,27 @@ internal class InfluencerAccountService(
         return updateProfileRequestResponse { }
     }
 
+    override suspend fun getProfile(request: GetProfileRequest): GetProfileResponse {
+        val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
+            ?: throw StatusException(Status.UNAUTHENTICATED)
+
+        val profileRequest = ProfileRequest.WithEmail(influencer.email)
+        return when (val result = influencerRepository.getPublicProfile(profileRequest)) {
+            is ProfileResult.Unknown, ProfileResult.NotFound -> throw StatusException(Status.UNKNOWN)
+            is ProfileResult.Success -> {
+                getProfileResponse {
+                    influencerProfile = influencerProfile {
+                        profilePicUrl = result.profile.profilePicUrl
+                        profileTitle = result.profile.profileTitle
+                        categoryTitle = result.profile.professionCategory
+                        bioDescription = result.profile.bioDescription
+                    }
+                    isProfileLive = result.profile.isProfileLive
+                }
+            }
+        }
+    }
+
     override suspend fun setProfileLive(request: SetProfileLiveRequest): SetProfileLiveResponse {
         val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
             ?: throw StatusException(Status.UNAUTHENTICATED)
@@ -84,6 +111,6 @@ internal class InfluencerAccountService(
             influencerEmail = influencer.email
         ) ?: throw StatusException(Status.UNKNOWN)
 
-        return  setProfileLiveResponse { }
+        return setProfileLiveResponse { }
     }
 }

@@ -5,6 +5,7 @@ import com.trufflear.search.influencer.GetInfluencerPublicProfileResponse
 import com.trufflear.search.influencer.InfluencerPublicProfileServiceGrpcKt
 import com.trufflear.search.influencer.getInfluencerPublicProfileResponse
 import com.trufflear.search.influencer.influencerProfile
+import com.trufflear.search.influencer.repositories.ProfileRequest
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.ProfileResult
 import mu.KotlinLogging
@@ -18,7 +19,8 @@ class InfluencerPublicProfileService(
     override suspend fun getInfluencerPublicProfile(request: GetInfluencerPublicProfileRequest): GetInfluencerPublicProfileResponse {
         logger.debug { "getting public profile for ${request.username}" }
 
-        return when (val result = repository.getPublicProfile(request.username)) {
+        val profileRequest = ProfileRequest.WithUsername(request.username)
+        return when (val result = repository.getPublicProfile(profileRequest)) {
             is ProfileResult.Unknown ->
                 getInfluencerPublicProfileResponse {
                     error = GetInfluencerPublicProfileResponse.Error.newBuilder()
