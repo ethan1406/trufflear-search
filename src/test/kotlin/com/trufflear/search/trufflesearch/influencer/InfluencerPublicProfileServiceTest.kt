@@ -1,9 +1,10 @@
 package com.trufflear.search.trufflesearch.influencer
 
 import com.trufflear.search.influencer.GetInfluencerPublicProfileResponse
-import com.trufflear.search.influencer.domain.InfluencerPublicProfile
+import com.trufflear.search.influencer.domain.InfluencerProfile
 import com.trufflear.search.influencer.getInfluencerPublicProfileRequest
 import com.trufflear.search.influencer.influencerProfile
+import com.trufflear.search.influencer.network.service.ImageService
 import com.trufflear.search.influencer.repositories.ProfileRequest
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.ProfileResult
@@ -19,19 +20,21 @@ private val testUsername = "cooking_bobo"
 
 private val getProfileRequest = ProfileRequest.WithUsername(username = testUsername)
 
-private val profile = InfluencerPublicProfile(
-    profilePicUrl = "",
+private val profile = InfluencerProfile(
+    profilePicObjectKey = "",
     profileTitle = testUsername,
     professionCategory = "",
     bioDescription = "",
-    isProfileLive = true
+    isProfileLive = true,
+    username = testUsername
 )
 
 class InfluencerPublicProfileServiceTest {
 
     private val influencerProfileRepository = mock<InfluencerProfileRepository>()
+    private val imageService = mock<ImageService>()
 
-    private val service = InfluencerPublicProfileService(influencerProfileRepository)
+    private val service = InfluencerPublicProfileService(influencerProfileRepository, imageService)
 
     @Test
     fun `get influencer public profile should return profile does not exist error when username not found`() =
@@ -72,11 +75,14 @@ class InfluencerPublicProfileServiceTest {
         }
 
     @Test
-    fun `get influencer public profile should return profile`() =
+    fun `get influencer public profile should return profile with empty profile url when image service returns null`() =
         runBlocking<Unit> {
             // ARRANGE
             whenever(influencerProfileRepository.getPublicProfile(getProfileRequest))
                 .thenReturn(ProfileResult.Success(profile))
+
+            whenever(imageService.getPresignedUrl(profile.profilePicObjectKey))
+                .thenReturn(null)
 
             val request = getInfluencerPublicProfileRequest {
                 username = testUsername
@@ -88,13 +94,44 @@ class InfluencerPublicProfileServiceTest {
             // ASSERT
             assertThat(response.success.profile).isEqualTo(
                 influencerProfile {
-                    profilePicUrl = profile.profilePicUrl
+                    profilePicUrl = ""
                     profileTitle = profile.profileTitle
                     categoryTitle = profile.professionCategory
                     bioDescription = profile.bioDescription
                 }
             )
             verify(influencerProfileRepository).getPublicProfile(getProfileRequest)
+            verify(imageService).getPresignedUrl(profile.profilePicObjectKey)
         }
 
+    @Test
+    fun `get influencer public profile should return profile`() =
+        runBlocking<Unit> {
+            // ARRANGE
+            val presignedUrl = "this is a presigned url"
+            whenever(influencerProfileRepository.getPublicProfile(getProfileRequest))
+                .thenReturn(ProfileResult.Success(profile))
+
+            whenever(imageService.getPresignedUrl(profile.profilePicObjectKey))
+                .thenReturn(presignedUrl)
+
+            val request = getInfluencerPublicProfileRequest {
+                username = testUsername
+            }
+
+            // ACT
+            val response = service.getInfluencerPublicProfile(request)
+
+            // ASSERT
+            assertThat(response.success.profile).isEqualTo(
+                influencerProfile {
+                    profilePicUrl = presignedUrl
+                    profileTitle = profile.profileTitle
+                    categoryTitle = profile.professionCategory
+                    bioDescription = profile.bioDescription
+                }
+            )
+            verify(influencerProfileRepository).getPublicProfile(getProfileRequest)
+            verify(imageService).getPresignedUrl(profile.profilePicObjectKey)
+        }
 }

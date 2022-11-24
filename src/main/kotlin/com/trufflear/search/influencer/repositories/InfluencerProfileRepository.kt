@@ -3,7 +3,7 @@ package com.trufflear.search.influencer.repositories
 import com.trufflear.search.influencer.database.tables.InfluencerTable
 import com.trufflear.search.influencer.domain.CallSuccess
 import com.trufflear.search.influencer.domain.Influencer
-import com.trufflear.search.influencer.domain.InfluencerPublicProfile
+import com.trufflear.search.influencer.domain.InfluencerProfile
 import com.trufflear.search.influencer.network.model.IgLongLivedTokenResponse
 import com.trufflear.search.influencer.network.model.IgUserInfo
 import kotlinx.coroutines.Dispatchers
@@ -34,8 +34,8 @@ class InfluencerProfileRepository(
                     val influencer = InfluencerTable
                         .slice(
                             InfluencerTable.profileTitle, InfluencerTable.categoryTitle,
-                            InfluencerTable.bioDescription, InfluencerTable.profileImageUrl,
-                            InfluencerTable.isProfileLive
+                            InfluencerTable.bioDescription, InfluencerTable.profileImageObjectKey,
+                            InfluencerTable.isProfileLive, InfluencerTable.username
                         )
                         .select {
                             when (request) {
@@ -46,8 +46,9 @@ class InfluencerProfileRepository(
                             }
                         }
                         .map {
-                            InfluencerPublicProfile(
-                                profilePicUrl = it[InfluencerTable.profileImageUrl],
+                            InfluencerProfile(
+                                username = it[InfluencerTable.username],
+                                profilePicObjectKey = it[InfluencerTable.profileImageObjectKey],
                                 profileTitle = it[InfluencerTable.profileTitle],
                                 professionCategory = it[InfluencerTable.categoryTitle],
                                 bioDescription = it[InfluencerTable.bioDescription],
@@ -88,6 +89,24 @@ class InfluencerProfileRepository(
                 } else {
                     InsertResult.Unknown
                 }
+            }
+        }
+
+    internal suspend fun saveProfileImageKey(username: String, imageKey: String): CallSuccess? =
+        withContext(Dispatchers.IO) {
+            try {
+                transaction(Database.connect(dataSource)) {
+                    addLogger(StdOutSqlLogger)
+
+                    InfluencerTable.update({ InfluencerTable.username eq username}) {
+                        it[profileImageObjectKey] = imageKey
+                    }
+
+                    CallSuccess
+                }
+            } catch (e: Exception) {
+                logger.error(e) { "error saving profile image object key for $username" }
+                null
             }
         }
 
@@ -195,7 +214,7 @@ sealed class ProfileRequest(open val id: String) {
 
 sealed class ProfileResult {
     data class Success(
-        val profile: InfluencerPublicProfile
+        val profile: InfluencerProfile
     ): ProfileResult()
 
     object NotFound: ProfileResult()

@@ -1,5 +1,10 @@
 package com.trufflear.search
 
+
+import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.regions.Regions
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.trufflear.search.config.igApiSubdomainBaseUrl
 import com.trufflear.search.config.igGraphSubdomainBaseUrl
 import com.trufflear.search.influencer.AccountInterceptor
@@ -9,7 +14,9 @@ import com.trufflear.search.influencer.services.InfluencerAccountConnectIgServic
 import com.trufflear.search.influencer.services.InfluencerAccountService
 import com.trufflear.search.influencer.network.service.IgAuthService
 import com.trufflear.search.influencer.network.service.IgGraphService
+import com.trufflear.search.influencer.network.service.ImageService
 import com.trufflear.search.influencer.network.service.InstagramService
+import com.trufflear.search.influencer.network.service.S3Service
 import com.trufflear.search.influencer.network.service.SearchIndexService
 import com.trufflear.search.influencer.repositories.InfluencerPostRepository
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
@@ -33,20 +40,21 @@ class TruffleSearchApplication(
     influencerProfileRepository: InfluencerProfileRepository,
     searchIndexRepository: SearchIndexRepository,
     influencerPostService: InfluencerPostService,
-    instagramService: InstagramService
+    instagramService: InstagramService,
+    imageService: ImageService
 ) {
 
     val server: Server = ServerBuilder
         .forPort(port)
         .addService(ServerInterceptors.intercept(
-            InfluencerAccountService(influencerProfileRepository, searchIndexRepository), AccountInterceptor())
+            InfluencerAccountService(influencerProfileRepository, searchIndexRepository, imageService), AccountInterceptor())
         )
         .addService(ServerInterceptors.intercept(
             InfluencerAccountConnectIgService(
                 influencerProfileRepository, influencerPostService, instagramService
             ), AccountInterceptor())
         )
-        .addService(InfluencerPublicProfileService(influencerProfileRepository))
+        .addService(InfluencerPublicProfileService(influencerProfileRepository, imageService))
         .build()
 
     fun start() {
@@ -72,16 +80,20 @@ class TruffleSearchApplication(
 }
 
 fun main() {
-
     val datasource = getHikariDataSource()
     CreateInfluencerScript.createInfluencer(datasource)
 
     BasicConfigurator.configure()
     val port = System.getenv("PORT")?.toInt() ?: 50051
 
+    val profileRepository = InfluencerProfileRepository(datasource)
+    val imageService = S3Service(
+        getS3Client(), profileRepository
+    )
+
     val server = TruffleSearchApplication(
         port,
-        InfluencerProfileRepository(datasource),
+        profileRepository,
         SearchIndexRepository(SearchIndexService()),
         InfluencerPostService(
             InfluencerPostRepository(datasource),
@@ -90,11 +102,24 @@ fun main() {
                 mentionTagRegex = mentionTagRegex,
             )
         ),
-        InstagramService(igAuthService(), igGraphService(),)
+        InstagramService(igAuthService(), igGraphService()),
+        imageService
     )
     server.start()
     server.blockUntilShutdown()
 }
+
+private fun getS3Client() = AmazonS3ClientBuilder.standard()
+    .withRegion(Regions.US_WEST_1)
+    .withCredentials(
+        AWSStaticCredentialsProvider(
+            BasicAWSCredentials(
+                System.getenv("S3_ACCESS_KEY"),
+                System.getenv("S3_SECRET_KEY")
+            )
+        )
+    )
+    .build()
 
 private fun getIgApiSubdomainRetrofit() =
     Retrofit.Builder()

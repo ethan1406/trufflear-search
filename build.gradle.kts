@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
 	kotlin("jvm") version "1.6.21"
 	id("com.google.protobuf") version "0.8.18"
+	id("org.springframework.boot") version "2.7.0"
 }
 
 group = "com.trufflear"
@@ -29,6 +30,10 @@ sourceSets {
 	main.java.srcDirs("build/generated/source/proto/main/grpc")
 	main.java.srcDirs("build/generated/source/proto/main/kotlin")
 	main.java.srcDirs("build/generated/source/proto/main/grpckt")
+
+	test {
+		java.srcDirs("src/test/kotlin")
+	}
 }
 
 dependencies {
@@ -56,7 +61,7 @@ dependencies {
 	implementation("org.jetbrains.exposed:exposed-java-time:0.40.1")
 	implementation("com.zaxxer:HikariCP:5.0.1")
 
-	implementation("com.amazonaws:aws-java-sdk-s3:1.12.342")
+	implementation("com.amazonaws:aws-java-sdk-s3:1.12.347")
 	implementation("org.bitbucket.b_c:jose4j:0.9.2")
 
 	implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -68,8 +73,6 @@ dependencies {
 	testImplementation("org.mockito:mockito-inline:4.8.0")
 	testImplementation ("org.junit.jupiter:junit-jupiter-api:5.9.0")
 	testRuntimeOnly ("org.junit.jupiter:junit-jupiter-engine:5.9.0")
-
-
 }
 
 tasks.withType<KotlinCompile> {

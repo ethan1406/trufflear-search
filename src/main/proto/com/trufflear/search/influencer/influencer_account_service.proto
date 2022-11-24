@@ -24,6 +24,12 @@ service InfluencerAccountService {
 
   // Set the profile URL to live or not
   rpc SetProfileLive(SetProfileLiveRequest) returns (SetProfileLiveResponse);
+
+  // Get the presigned url to upload a JPEG image to (using PUT)
+  rpc GetProfileImageUploadUrl(GetProfileImageUploadUrlRequest) returns (GetProfileImageUploadUrlResponse);
+
+  // Send this request when an image is successfully uploaded
+  rpc SucceedInImageUpload(ImageUploadSuccessRequest) returns (ImageUploadSuccessResponse);
 }
 
 message SignupRequest {}
@@ -53,3 +59,17 @@ message SetProfileLiveRequest {
 }
 
 message SetProfileLiveResponse {}
+
+message GetProfileImageUploadUrlRequest {}
+
+message GetProfileImageUploadUrlResponse {
+  /*
+   * when uploading to this url, use PUT.
+   * Set Content-Type to image/jpeg. Also, Content-Length needs to be set too.
+   */
+  string url = 1;
+}
+
+message ImageUploadSuccessRequest {}
+
+message ImageUploadSuccessResponse {}

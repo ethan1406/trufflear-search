@@ -1,7 +1,11 @@
 package com.trufflear.search.influencer.services
 
+import com.trufflear.search.influencer.GetProfileImageUploadUrlRequest
+import com.trufflear.search.influencer.GetProfileImageUploadUrlResponse
 import com.trufflear.search.influencer.GetProfileRequest
 import com.trufflear.search.influencer.GetProfileResponse
+import com.trufflear.search.influencer.ImageUploadSuccessRequest
+import com.trufflear.search.influencer.ImageUploadSuccessResponse
 import com.trufflear.search.influencer.InfluencerAccountServiceGrpcKt
 import com.trufflear.search.influencer.InfluencerCoroutineElement
 import com.trufflear.search.influencer.SetProfileLiveRequest
@@ -10,9 +14,12 @@ import com.trufflear.search.influencer.SignupRequest
 import com.trufflear.search.influencer.SignupResponse
 import com.trufflear.search.influencer.UpdateProfileRequest
 import com.trufflear.search.influencer.UpdateProfileRequestResponse
+import com.trufflear.search.influencer.getProfileImageUploadUrlResponse
 import com.trufflear.search.influencer.getProfileResponse
+import com.trufflear.search.influencer.imageUploadSuccessResponse
 import com.trufflear.search.influencer.influencerProfile
 import com.trufflear.search.influencer.network.service.CollectionCreation
+import com.trufflear.search.influencer.network.service.ImageService
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.InsertResult
 import com.trufflear.search.influencer.repositories.ProfileRequest
@@ -30,7 +37,8 @@ import kotlin.coroutines.coroutineContext
 
 internal class InfluencerAccountService(
     private val influencerRepository: InfluencerProfileRepository,
-    private val searchIndexRepository: SearchIndexRepository
+    private val searchIndexRepository: SearchIndexRepository,
+    private val imageService: ImageService
 ) : InfluencerAccountServiceGrpcKt.InfluencerAccountServiceCoroutineImplBase() {
 
     private val logger = KotlinLogging.logger {}
@@ -87,13 +95,55 @@ internal class InfluencerAccountService(
             is ProfileResult.Success -> {
                 getProfileResponse {
                     influencerProfile = influencerProfile {
-                        profilePicUrl = result.profile.profilePicUrl
+                        profilePicUrl = imageService.getPresignedUrl(result.profile.profilePicObjectKey).orEmpty()
                         profileTitle = result.profile.profileTitle
                         categoryTitle = result.profile.professionCategory
                         bioDescription = result.profile.bioDescription
                     }
                     isProfileLive = result.profile.isProfileLive
                 }
+            }
+        }
+    }
+
+    override suspend fun getProfileImageUploadUrl(request: GetProfileImageUploadUrlRequest): GetProfileImageUploadUrlResponse {
+        val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
+            ?: throw StatusException(Status.UNAUTHENTICATED)
+
+        val profileRequest = ProfileRequest.WithEmail(influencer.email)
+        return when (val result = influencerRepository.getPublicProfile(profileRequest)) {
+            is ProfileResult.Unknown, ProfileResult.NotFound -> throw StatusException(Status.UNKNOWN)
+            is ProfileResult.Success -> {
+                val username = result.profile.username
+                if (username.isEmpty()) {
+                    throw StatusException(Status.PERMISSION_DENIED.withDescription("user must connect with instagram first"))
+                }
+
+                val presignedUrl = imageService.getProfileImageUploadUrl(result.profile.username)
+                    ?: throw StatusException(Status.UNKNOWN)
+
+                getProfileImageUploadUrlResponse {
+                    url = presignedUrl
+                }
+            }
+        }
+    }
+
+    override suspend fun succeedInImageUpload(request: ImageUploadSuccessRequest): ImageUploadSuccessResponse {
+        val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
+            ?: throw StatusException(Status.UNAUTHENTICATED)
+
+        val profileRequest = ProfileRequest.WithEmail(influencer.email)
+        return when (val result = influencerRepository.getPublicProfile(profileRequest)) {
+            is ProfileResult.Unknown, ProfileResult.NotFound -> throw StatusException(Status.UNKNOWN)
+            is ProfileResult.Success -> {
+                val username = result.profile.username
+                if (username.isEmpty()) {
+                    throw StatusException(Status.PERMISSION_DENIED.withDescription("user must connect with instagram first"))
+                }
+                imageService.saveProfileImageKey(username) ?: throw StatusException(Status.UNKNOWN)
+
+                imageUploadSuccessResponse { }
             }
         }
     }

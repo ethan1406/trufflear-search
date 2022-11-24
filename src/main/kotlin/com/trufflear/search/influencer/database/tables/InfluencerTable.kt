@@ -12,7 +12,7 @@ object InfluencerTable: IdTable<String>("INFLUENCER") {
     val isEmailVerified = bool("email_verified")
     val isProfileLive = bool("is_profile_live").default(true)
     val bioDescription = varchar("bio_description", 200).default("")
-    val profileImageUrl = varchar("profile_image_url", 1000).default("")
+    val profileImageObjectKey = varchar("profile_image_url", 1000).default("")
     val profileTitle = varchar("profile_title", 30).default("")
     val username = varchar("username", 30).default("")
     val categoryTitle = varchar("category_title", 30).default("")

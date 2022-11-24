@@ -5,13 +5,15 @@ import com.trufflear.search.influencer.GetInfluencerPublicProfileResponse
 import com.trufflear.search.influencer.InfluencerPublicProfileServiceGrpcKt
 import com.trufflear.search.influencer.getInfluencerPublicProfileResponse
 import com.trufflear.search.influencer.influencerProfile
+import com.trufflear.search.influencer.network.service.ImageService
 import com.trufflear.search.influencer.repositories.ProfileRequest
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.ProfileResult
 import mu.KotlinLogging
 
 class InfluencerPublicProfileService(
-    private val repository: InfluencerProfileRepository
+    private val repository: InfluencerProfileRepository,
+    private val imageService: ImageService
 ): InfluencerPublicProfileServiceGrpcKt.InfluencerPublicProfileServiceCoroutineImplBase() {
 
     private val logger = KotlinLogging.logger {}
@@ -45,7 +47,7 @@ class InfluencerPublicProfileService(
                         success = GetInfluencerPublicProfileResponse.Success.newBuilder()
                             .setProfile(
                                 influencerProfile {
-                                    profilePicUrl = result.profile.profilePicUrl
+                                    profilePicUrl = imageService.getPresignedUrl(result.profile.profilePicObjectKey).orEmpty()
                                     profileTitle = result.profile.profileTitle
                                     categoryTitle = result.profile.professionCategory
                                     bioDescription = result.profile.bioDescription

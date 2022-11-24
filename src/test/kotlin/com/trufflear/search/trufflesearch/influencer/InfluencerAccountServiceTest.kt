@@ -3,9 +3,12 @@ package com.trufflear.search.trufflesearch.influencer
 import com.trufflear.search.influencer.InfluencerCoroutineElement
 import com.trufflear.search.influencer.domain.CallSuccess
 import com.trufflear.search.influencer.domain.Influencer
-import com.trufflear.search.influencer.domain.InfluencerPublicProfile
+import com.trufflear.search.influencer.domain.InfluencerProfile
+import com.trufflear.search.influencer.getProfileImageUploadUrlRequest
 import com.trufflear.search.influencer.getProfileRequest
+import com.trufflear.search.influencer.imageUploadSuccessRequest
 import com.trufflear.search.influencer.network.service.CollectionCreation
+import com.trufflear.search.influencer.network.service.ImageService
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.InsertResult
 import com.trufflear.search.influencer.repositories.ProfileRequest
@@ -24,20 +27,29 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
+private val influencer = Influencer(
+    emailVerified = false,
+    name = "Bobo Chang",
+    email = "bobo@gmail.com"
+)
+
+private val influencerProfile = InfluencerProfile(
+    profilePicObjectKey = "",
+    profileTitle = "",
+    professionCategory = "",
+    bioDescription = "hi, how are you?",
+    isProfileLive = true,
+    username = "cooking_bobo"
+)
 
 class InfluencerAccountServiceTest {
 
     private val influencerProfileRepository = mock<InfluencerProfileRepository>()
     private val searchIndexRepository = mock<SearchIndexRepository>()
+    private val imageService = mock<ImageService>()
 
     private val service = InfluencerAccountService(
-        influencerProfileRepository, searchIndexRepository
-    )
-
-    private val influencer = Influencer(
-        emailVerified = false,
-        name = "Bobo Chang",
-        email = "bobo@gmail.com"
+        influencerProfileRepository, searchIndexRepository, imageService
     )
 
     @Test
@@ -213,21 +225,14 @@ class InfluencerAccountServiceTest {
     fun `get profile should return response when found`() =
         runBlocking<Unit>(InfluencerCoroutineElement(influencer)) {
             // ARRANGE
-            val bioDescription = "hi, how are you?"
+            val presignedUrl = "presigned url"
 
             val profileRequest = ProfileRequest.WithEmail(influencer.email)
             whenever(influencerProfileRepository.getPublicProfile(profileRequest))
-                .thenReturn(
-                    ProfileResult.Success(
-                        InfluencerPublicProfile(
-                            profilePicUrl = "",
-                            profileTitle = "",
-                            professionCategory = "",
-                            bioDescription = bioDescription,
-                            isProfileLive = true
-                        )
-                    )
-                )
+                .thenReturn(ProfileResult.Success(influencerProfile))
+
+            whenever(imageService.getPresignedUrl(influencerProfile.profilePicObjectKey))
+                .thenReturn(presignedUrl)
 
             val request = getProfileRequest {}
 
@@ -236,7 +241,94 @@ class InfluencerAccountServiceTest {
 
             // ASSERT
             assertThat(response.isProfileLive).isTrue
-            assertThat(response.influencerProfile.bioDescription).isEqualTo(bioDescription)
+            assertThat(response.influencerProfile.bioDescription).isEqualTo(influencerProfile.bioDescription)
+            assertThat(response.influencerProfile.profilePicUrl).isEqualTo(presignedUrl)
+
             verify(influencerProfileRepository).getPublicProfile(profileRequest)
+            verify(imageService).getPresignedUrl(influencerProfile.profilePicObjectKey)
+        }
+
+    @Test
+    fun `get profile image upload url should throw exception if repository fails to fetch profile`() =
+        runBlocking<Unit>(InfluencerCoroutineElement(influencer)) {
+            // ARRANGE
+            val profileRequest = ProfileRequest.WithEmail(influencer.email)
+            whenever(influencerProfileRepository.getPublicProfile(profileRequest))
+                .thenReturn(ProfileResult.NotFound)
+
+            val request = getProfileImageUploadUrlRequest { }
+
+            // ACT
+            val exception = assertThrows<StatusException> { service.getProfileImageUploadUrl(request) }
+
+            // ASSERT
+            assertThat(exception.status.code).isEqualTo(Status.Code.UNKNOWN)
+            verify(influencerProfileRepository).getPublicProfile(profileRequest)
+        }
+
+    @Test
+    fun `get profile image upload url should return presigned url`() =
+        runBlocking<Unit>(InfluencerCoroutineElement(influencer)) {
+            // ARRANGE
+            val uploadUrl = "s3upload presigned url"
+            val profileRequest = ProfileRequest.WithEmail(influencer.email)
+            whenever(influencerProfileRepository.getPublicProfile(profileRequest))
+                .thenReturn(ProfileResult.Success(influencerProfile))
+
+            whenever(imageService.getProfileImageUploadUrl(influencerProfile.username)).thenReturn(uploadUrl)
+
+            val request = getProfileImageUploadUrlRequest { }
+
+            // ACT
+            val response = service.getProfileImageUploadUrl(request)
+
+            // ASSERT
+            assertThat(response.url).isEqualTo(uploadUrl)
+            verify(influencerProfileRepository).getPublicProfile(profileRequest)
+            verify(imageService).getProfileImageUploadUrl(influencerProfile.username)
+        }
+
+    @Test
+    fun `succeed in image upload request throws exceptions when username is empty`() =
+        runBlocking<Unit>(InfluencerCoroutineElement(influencer)) {
+            // ARRANGE
+            val profileRequest = ProfileRequest.WithEmail(influencer.email)
+            whenever(influencerProfileRepository.getPublicProfile(profileRequest))
+                .thenReturn(
+                    ProfileResult.Success(
+                        influencerProfile.copy(username = "")
+                    )
+                )
+
+            val request = imageUploadSuccessRequest { }
+
+            // ACT
+            val exception = assertThrows<StatusException> { service.succeedInImageUpload(request) }
+
+            // ASSERT
+            assertThat(exception.status.code).isEqualTo(Status.Code.PERMISSION_DENIED)
+            verify(influencerProfileRepository).getPublicProfile(profileRequest)
+        }
+
+    @Test
+    fun `succeed in image upload returns success`() =
+        runBlocking<Unit>(InfluencerCoroutineElement(influencer)) {
+            // ARRANGE
+            val profileRequest = ProfileRequest.WithEmail(influencer.email)
+            whenever(influencerProfileRepository.getPublicProfile(profileRequest))
+                .thenReturn(ProfileResult.Success(influencerProfile))
+
+            whenever(imageService.saveProfileImageKey(influencerProfile.username))
+                .thenReturn(CallSuccess)
+
+            val request = imageUploadSuccessRequest { }
+
+            // ACT
+            val response = service.succeedInImageUpload(request)
+
+            // ASSERT
+            assertThat(response).isNotNull
+            verify(influencerProfileRepository).getPublicProfile(profileRequest)
+            verify(imageService).saveProfileImageKey(influencerProfile.username)
         }
 }

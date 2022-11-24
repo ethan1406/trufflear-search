@@ -6,8 +6,9 @@ data class Influencer(
     val email: String
 )
 
-data class InfluencerPublicProfile(
-    val profilePicUrl: String,
+data class InfluencerProfile(
+    val username: String,
+    val profilePicObjectKey: String,
     val profileTitle: String,
     val professionCategory: String,
     val bioDescription: String,
