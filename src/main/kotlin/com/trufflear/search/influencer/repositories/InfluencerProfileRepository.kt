@@ -2,6 +2,7 @@ package com.trufflear.search.influencer.repositories
 
 import com.trufflear.search.influencer.database.tables.InfluencerTable
 import com.trufflear.search.influencer.domain.CallSuccess
+import com.trufflear.search.influencer.domain.IgAuth
 import com.trufflear.search.influencer.domain.Influencer
 import com.trufflear.search.influencer.domain.InfluencerProfile
 import com.trufflear.search.influencer.network.model.IgLongLivedTokenResponse
@@ -63,6 +64,32 @@ class InfluencerProfileRepository(
             } catch (e: Exception) {
                 logger.error(e) { "error getting profile for ${request.id}" }
                 ProfileResult.Unknown
+            }
+        }
+
+    internal suspend fun getIgAuth(influencerEmail: String): IgAuth? =
+        withContext(Dispatchers.IO) {
+            try {
+                transaction(Database.connect(dataSource)) {
+                    addLogger(StdOutSqlLogger)
+
+                    val igAuth = InfluencerTable
+                        .slice(
+                            InfluencerTable.igLongLivedAccessToken, InfluencerTable.igUserId
+                        )
+                        .select { InfluencerTable.email eq influencerEmail }
+                        .map {
+                            IgAuth(
+                                instagramId = it[InfluencerTable.igUserId],
+                                accessToken = it[InfluencerTable.igLongLivedAccessToken]
+                            )
+                        }.firstOrNull()
+
+                    igAuth
+                }
+            } catch (e: Exception) {
+                logger.error(e) { "error ig auth info for $influencerEmail" }
+                null
             }
         }
 
