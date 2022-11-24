@@ -27,10 +27,13 @@ import com.trufflear.search.influencer.network.model.IgPost
 import com.trufflear.search.influencer.network.model.IgResponse
 import com.trufflear.search.influencer.network.service.IgServiceResult
 import com.trufflear.search.influencer.network.service.InstagramService
+import com.trufflear.search.influencer.refreshIgUserMediaResponse
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -47,9 +50,7 @@ class InfluencerAccountConnectIgService (
 
     override suspend fun getIgAuthorizationWindowUrl(request: GetIgAuthorizationWindowUrlRequest) =
         getIgAuthorizationWindowUrlResponse {
-            url = "$igApiSubdomainBaseUrl$authPath?${IgApiParams.clientId}=$clientId&" +
-                    "${IgApiParams.redirectUri}=$redirectUri&${IgApiParams.responseType}=${IgResponseTypeFields.code}&" +
-                    "${IgApiParams.scope}=${IgAuthScopeFields.userProfile},${IgAuthScopeFields.userMedia}"
+            url = getIgAuthWindowUrl()
         }
 
     override suspend fun connectIgUserMedia(request: ConnectIgUserMediaRequest): ConnectIgUserMediaResponse {
@@ -77,28 +78,28 @@ class InfluencerAccountConnectIgService (
             is IgServiceResult.Success -> {
                 println("asdhfasd: ${result.response.accessToken}")
                 withContext(Dispatchers.IO) {
-                    listOf(
-                        launch {
-                            val fetchResult = fetchAndStoreUserInfoAndToken(
+                    val fetchTasks = listOf(
+                        async {
+                            fetchAndStoreUserInfoAndToken(
                                 accessToken = result.response.accessToken,
                                 instagramUserId = result.response.userId,
                                 influencerEmail = influencer.email
                             )
-                            if (fetchResult is Result.Error) {
-                                handleError(fetchResult.error)
-                            }
                         },
-                        launch {
-                            val fetchResult = fetchAndStoreUserPosts(
+                        async {
+                            fetchAndStoreUserPosts(
                                 accessToken = result.response.accessToken,
                                 instagramUserId = result.response.userId,
                                 influencerEmail = influencer.email
                             )
-                            if (fetchResult is Result.Error) {
-                                handleError(fetchResult.error)
-                            }
                         }
-                    ).joinAll()
+                    ).awaitAll()
+
+                    fetchTasks.forEach {
+                        if (it is Result.Error) {
+                            handleError(it.error)
+                        }
+                    }
                 }
             }
         }
@@ -106,22 +107,40 @@ class InfluencerAccountConnectIgService (
         return connectIgUserMediaResponse { }
     }
 
-//    override suspend fun refreshIgUserMedia(request: RefreshIgUserMediaRequest): RefreshIgUserMediaResponse {
-//        logger.info ("Refreshing instagram connections for user")
-//
-//        val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
-//            ?: throw StatusException(Status.UNAUTHENTICATED)
-//
-//        val igAuth = influencerProfileRepository.getIgAuth(influencer.email) ?: throw StatusException(Status.UNKNOWN)
-//
-//        fetchAndStoreUserPosts(
-//            accessToken = igAuth.accessToken,
-//            instagramUserId = igAuth.instagramId,
-//            influencerEmail = influencer.email
-//        )
-//
-//
-//    }
+    override suspend fun refreshIgUserMedia(request: RefreshIgUserMediaRequest): RefreshIgUserMediaResponse {
+        logger.info ("Refreshing instagram connections for user")
+
+        val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
+            ?: throw StatusException(Status.UNAUTHENTICATED)
+
+        val igAuth = influencerProfileRepository.getIgAuth(influencer.email) ?: throw StatusException(Status.UNKNOWN)
+
+        if (igAuth.accessToken.isBlank() || igAuth.instagramId.isBlank()) {
+            logger.debug("Ig auth access token or instagram id is missing. AccessToken: ${igAuth.accessToken} Id: ${igAuth.instagramId}")
+            return refreshIgUserMediaResponse {
+                authorizationRequired = RefreshIgUserMediaResponse.AuthorizationRequired.newBuilder()
+                    .setAuthWindowUrl(getIgAuthWindowUrl())
+                    .build()
+            }
+        }
+
+        val result = fetchAndStoreUserPosts(
+            accessToken = igAuth.accessToken,
+            instagramUserId = igAuth.instagramId,
+            influencerEmail = influencer.email
+        )
+
+        return when (result) {
+            is Result.Error -> refreshIgUserMediaResponse {
+                authorizationRequired = RefreshIgUserMediaResponse.AuthorizationRequired.newBuilder()
+                    .setAuthWindowUrl(getIgAuthWindowUrl())
+                    .build()
+            }
+            is Result.Success -> refreshIgUserMediaResponse {
+                success = RefreshIgUserMediaResponse.Success.getDefaultInstance()
+            }
+        }
+    }
 
     private fun handleError(error: Error) {
         when (error) {
@@ -254,6 +273,10 @@ class InfluencerAccountConnectIgService (
         .replace(" ", "")
         .replace("[", "")
         .replace("]", "")
+
+    private fun getIgAuthWindowUrl() = "$igApiSubdomainBaseUrl$authPath?${IgApiParams.clientId}=$clientId&" +
+            "${IgApiParams.redirectUri}=$redirectUri&${IgApiParams.responseType}=${IgResponseTypeFields.code}&" +
+            "${IgApiParams.scope}=${IgAuthScopeFields.userProfile},${IgAuthScopeFields.userMedia}"
 
     internal sealed class Error {
         sealed class IgError: Error() {
