@@ -26,7 +26,8 @@ private val profile = InfluencerProfile(
     professionCategory = "",
     bioDescription = "",
     isProfileLive = true,
-    username = testUsername
+    username = testUsername,
+    email = "cookingBobo@gmail.com"
 )
 
 class InfluencerPublicProfileServiceTest {
@@ -98,6 +99,7 @@ class InfluencerPublicProfileServiceTest {
                     profileTitle = profile.profileTitle
                     categoryTitle = profile.professionCategory
                     bioDescription = profile.bioDescription
+                    email = profile.email
                 }
             )
             verify(influencerProfileRepository).getPublicProfile(getProfileRequest)
@@ -129,6 +131,7 @@ class InfluencerPublicProfileServiceTest {
                     profileTitle = profile.profileTitle
                     categoryTitle = profile.professionCategory
                     bioDescription = profile.bioDescription
+                    email = profile.email
                 }
             )
             verify(influencerProfileRepository).getPublicProfile(getProfileRequest)

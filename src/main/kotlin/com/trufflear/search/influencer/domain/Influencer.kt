@@ -8,6 +8,7 @@ data class Influencer(
 
 data class InfluencerProfile(
     val username: String,
+    val email: String,
     val profilePicObjectKey: String,
     val profileTitle: String,
     val professionCategory: String,

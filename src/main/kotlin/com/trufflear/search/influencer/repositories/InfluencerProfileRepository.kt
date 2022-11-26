@@ -36,7 +36,8 @@ class InfluencerProfileRepository(
                         .slice(
                             InfluencerTable.profileTitle, InfluencerTable.categoryTitle,
                             InfluencerTable.bioDescription, InfluencerTable.profileImageObjectKey,
-                            InfluencerTable.isProfileLive, InfluencerTable.username
+                            InfluencerTable.isProfileLive, InfluencerTable.username,
+                            InfluencerTable.email
                         )
                         .select {
                             when (request) {
@@ -49,6 +50,7 @@ class InfluencerProfileRepository(
                         .map {
                             InfluencerProfile(
                                 username = it[InfluencerTable.username],
+                                email = it[InfluencerTable.email],
                                 profilePicObjectKey = it[InfluencerTable.profileImageObjectKey],
                                 profileTitle = it[InfluencerTable.profileTitle],
                                 professionCategory = it[InfluencerTable.categoryTitle],

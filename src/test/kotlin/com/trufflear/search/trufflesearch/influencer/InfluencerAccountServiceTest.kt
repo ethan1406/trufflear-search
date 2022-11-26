@@ -39,7 +39,8 @@ private val influencerProfile = InfluencerProfile(
     professionCategory = "",
     bioDescription = "hi, how are you?",
     isProfileLive = true,
-    username = "cooking_bobo"
+    username = "cooking_bobo",
+    email = "cookingBobo@gmail.com"
 )
 
 class InfluencerAccountServiceTest {
@@ -242,6 +243,7 @@ class InfluencerAccountServiceTest {
             // ASSERT
             assertThat(response.isProfileLive).isTrue
             assertThat(response.influencerProfile.bioDescription).isEqualTo(influencerProfile.bioDescription)
+            assertThat(response.influencerProfile.email).isEqualTo(influencerProfile.email)
             assertThat(response.influencerProfile.profilePicUrl).isEqualTo(presignedUrl)
 
             verify(influencerProfileRepository).getPublicProfile(profileRequest)

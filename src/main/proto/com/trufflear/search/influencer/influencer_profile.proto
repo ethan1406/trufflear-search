@@ -13,4 +13,5 @@ message InfluencerProfile {
   string profile_title = 2;
   string category_title = 3;
   string bio_description = 4;
+  string email = 5;
 }
