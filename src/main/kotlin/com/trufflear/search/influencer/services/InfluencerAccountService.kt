@@ -19,7 +19,7 @@ import com.trufflear.search.influencer.getProfileResponse
 import com.trufflear.search.influencer.imageUploadSuccessResponse
 import com.trufflear.search.influencer.influencerProfile
 import com.trufflear.search.influencer.network.service.CollectionCreation
-import com.trufflear.search.influencer.network.service.ImageService
+import com.trufflear.search.influencer.network.service.StorageService
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.InsertResult
 import com.trufflear.search.influencer.repositories.ProfileRequest
@@ -38,7 +38,7 @@ import kotlin.coroutines.coroutineContext
 internal class InfluencerAccountService(
     private val influencerRepository: InfluencerProfileRepository,
     private val searchIndexRepository: SearchIndexRepository,
-    private val imageService: ImageService
+    private val storageService: StorageService
 ) : InfluencerAccountServiceGrpcKt.InfluencerAccountServiceCoroutineImplBase() {
 
     private val logger = KotlinLogging.logger {}
@@ -95,7 +95,7 @@ internal class InfluencerAccountService(
             is ProfileResult.Success -> {
                 getProfileResponse {
                     influencerProfile = influencerProfile {
-                        profilePicUrl = imageService.getPresignedUrl(result.profile.profilePicObjectKey).orEmpty()
+                        profilePicUrl = storageService.getUrl(result.profile.profilePicObjectKey).orEmpty()
                         profileTitle = result.profile.profileTitle
                         categoryTitle = result.profile.professionCategory
                         bioDescription = result.profile.bioDescription
@@ -120,7 +120,7 @@ internal class InfluencerAccountService(
                     throw StatusException(Status.PERMISSION_DENIED.withDescription("user must connect with instagram first"))
                 }
 
-                val presignedUrl = imageService.getProfileImageUploadUrl(result.profile.username)
+                val presignedUrl = storageService.getProfileImageUploadUrl(result.profile.username)
                     ?: throw StatusException(Status.UNKNOWN)
 
                 getProfileImageUploadUrlResponse {
@@ -142,7 +142,7 @@ internal class InfluencerAccountService(
                 if (username.isEmpty()) {
                     throw StatusException(Status.PERMISSION_DENIED.withDescription("user must connect with instagram first"))
                 }
-                imageService.saveProfileImageKey(username) ?: throw StatusException(Status.UNKNOWN)
+                storageService.saveProfileImageKey(username) ?: throw StatusException(Status.UNKNOWN)
 
                 imageUploadSuccessResponse { }
             }

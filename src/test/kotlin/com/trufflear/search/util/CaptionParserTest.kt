@@ -1,4 +1,4 @@
-package com.trufflear.search.trufflesearch.util
+package com.trufflear.search.util
 
 import com.trufflear.search.influencer.util.CaptionParser
 import com.trufflear.search.influencer.util.hashTagRegex

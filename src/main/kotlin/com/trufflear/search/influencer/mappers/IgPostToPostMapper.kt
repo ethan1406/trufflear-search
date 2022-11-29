@@ -3,6 +3,7 @@ package com.trufflear.search.influencer.mappers
 import com.trufflear.search.config.IgMediaType
 import com.trufflear.search.influencer.domain.Post
 import com.trufflear.search.influencer.network.model.IgPost
+import com.trufflear.search.influencer.network.service.StorageService
 import com.trufflear.search.influencer.util.CaptionParser
 import com.trufflear.search.influencer.util.igDateFormat
 import mu.KLogger
@@ -10,18 +11,21 @@ import java.sql.Timestamp
 import java.text.ParseException
 import java.time.Instant
 
-internal fun IgPost.toPostDomain(captionParser: CaptionParser, logger: KLogger) =
-    Post(
-        caption = caption.orEmpty(),
+internal fun IgPost.toPostDomain(
+    captionParser: CaptionParser,
+    storageService: StorageService,
+    logger: KLogger
+) = Post(
+        caption = caption?.removeNewLine().orEmpty(),
         hashTags = caption?.let { captionParser.getHashTags(it) }.orEmpty(),
         mentions = caption?.let { captionParser.getMentions(it) }.orEmpty(),
         mediaType = mediaType,
-        mediaUrl = mediaUrl,
         thumbnailUrl = getCorrectThumbnailUrl(
             thumbnailUrl = thumbnailUrl,
             mediaUrl = mediaUrl,
             mediaType = mediaType
         ),
+        thumbnailObjectKey = storageService.getThumbnailObjectKey(username, id),
         permalink = permalink,
         username = username,
         id = id,
@@ -47,3 +51,8 @@ private fun convertIgTimeToInstant(dateTimeString: String, logger: KLogger): Ins
         logger.error(e) { "error parsing date" }
         Instant.now()
     }
+
+private fun String.removeNewLine() =
+    replace("\n", " ")
+
+

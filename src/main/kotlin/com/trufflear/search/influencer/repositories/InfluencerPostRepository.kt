@@ -3,12 +3,10 @@ package com.trufflear.search.influencer.repositories
 import com.trufflear.search.influencer.database.tables.PostTable
 import com.trufflear.search.influencer.domain.CallSuccess
 import com.trufflear.search.influencer.domain.Post
-import com.trufflear.search.influencer.network.model.IgPost
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
@@ -40,10 +38,13 @@ class InfluencerPostRepository(
             }
         }
 
-    suspend fun insertNewPosts(
+    suspend fun handleIncomingPosts(
+        postsToDelete: Set<String>,
+        postsToUpdate: List<Post>,
         newPosts: List<Post>,
         influencerEmail: String
     ): CallSuccess? =
+
         withContext(Dispatchers.IO) {
             try {
                 transaction(Database.connect(dataSource)) {
@@ -58,23 +59,9 @@ class InfluencerPostRepository(
                         this[PostTable.mentions] = post.mentions
                         this[PostTable.permalink] = post.permalink
                         this[PostTable.mediaType] = post.mediaType
-                        this[PostTable.mediaUrl] = post.mediaUrl
-                        this[PostTable.thumbnailUrl] = post.thumbnailUrl
+                        this[PostTable.thumbnailObjectKey] = post.thumbnailObjectKey
                         this[PostTable.createdAtTimestamp] = post.timestamp
                     }
-                }
-                CallSuccess
-            } catch (e: Exception) {
-                logger.error(e) { "error inserting posts for $influencerEmail" }
-                null
-            }
-        }
-
-    suspend fun updatePosts(postsToUpdate: List<Post>) : CallSuccess? =
-        withContext(Dispatchers.IO) {
-            try {
-                transaction(Database.connect(dataSource)) {
-                    addLogger(StdOutSqlLogger)
 
                     postsToUpdate.forEach { post ->
                         PostTable.update({ PostTable.igId eq post.id }) {
@@ -84,20 +71,8 @@ class InfluencerPostRepository(
                             it[permalink] = post.permalink
                         }
                     }
-                }
-                CallSuccess
-            } catch (e: Exception) {
-                logger.error(e) { "error updating posts" }
-                null
-            }
-        }
 
-    suspend fun deletePosts(oldPostIgIds: Set<String>): CallSuccess? =
-        withContext(Dispatchers.IO) {
-            try {
-                transaction(Database.connect(dataSource)) {
-                    addLogger(StdOutSqlLogger)
-                    PostTable.deleteWhere { igId inList oldPostIgIds }
+                    PostTable.deleteWhere { igId inList postsToDelete }
                 }
                 CallSuccess
             } catch (e: Exception) {
@@ -105,5 +80,4 @@ class InfluencerPostRepository(
                 null
             }
         }
-
 }

@@ -8,19 +8,20 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.trufflear.search.config.igApiSubdomainBaseUrl
 import com.trufflear.search.config.igGraphSubdomainBaseUrl
 import com.trufflear.search.influencer.AccountInterceptor
-import com.trufflear.search.influencer.InfluencerPostService
+import com.trufflear.search.influencer.services.InfluencerPostHandlingService
 import com.trufflear.search.influencer.database.scripts.CreateInfluencerScript
 import com.trufflear.search.influencer.services.InfluencerAccountConnectIgService
 import com.trufflear.search.influencer.services.InfluencerAccountService
 import com.trufflear.search.influencer.network.service.IgAuthService
 import com.trufflear.search.influencer.network.service.IgGraphService
-import com.trufflear.search.influencer.network.service.ImageService
+import com.trufflear.search.influencer.network.service.StorageService
 import com.trufflear.search.influencer.network.service.InstagramService
 import com.trufflear.search.influencer.network.service.S3Service
 import com.trufflear.search.influencer.network.service.SearchIndexService
 import com.trufflear.search.influencer.repositories.InfluencerPostRepository
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.SearchIndexRepository
+import com.trufflear.search.influencer.services.IgHandlingService
 import com.trufflear.search.influencer.services.InfluencerPublicProfileService
 import com.trufflear.search.influencer.util.CaptionParser
 import com.trufflear.search.influencer.util.hashTagRegex
@@ -39,22 +40,22 @@ class TruffleSearchApplication(
     private val port: Int,
     influencerProfileRepository: InfluencerProfileRepository,
     searchIndexRepository: SearchIndexRepository,
-    influencerPostService: InfluencerPostService,
     instagramService: InstagramService,
-    imageService: ImageService
+    igHandlingService: IgHandlingService,
+    storageService: StorageService
 ) {
 
     val server: Server = ServerBuilder
         .forPort(port)
         .addService(ServerInterceptors.intercept(
-            InfluencerAccountService(influencerProfileRepository, searchIndexRepository, imageService), AccountInterceptor())
+            InfluencerAccountService(influencerProfileRepository, searchIndexRepository, storageService), AccountInterceptor())
         )
         .addService(ServerInterceptors.intercept(
             InfluencerAccountConnectIgService(
-                influencerProfileRepository, influencerPostService, instagramService
+                influencerProfileRepository, instagramService, igHandlingService
             ), AccountInterceptor())
         )
-        .addService(InfluencerPublicProfileService(influencerProfileRepository, imageService))
+        .addService(InfluencerPublicProfileService(influencerProfileRepository, storageService))
         .build()
 
     fun start() {
@@ -76,7 +77,6 @@ class TruffleSearchApplication(
     fun blockUntilShutdown() {
         server.awaitTermination()
     }
-
 }
 
 fun main() {
@@ -87,23 +87,28 @@ fun main() {
     val port = System.getenv("PORT")?.toInt() ?: 50051
 
     val profileRepository = InfluencerProfileRepository(datasource)
-    val imageService = S3Service(
+    val storageService = S3Service(
         getS3Client(), profileRepository
     )
+
+    val instagramService = InstagramService(igAuthService(), igGraphService())
 
     val server = TruffleSearchApplication(
         port,
         profileRepository,
         SearchIndexRepository(SearchIndexService()),
-        InfluencerPostService(
-            InfluencerPostRepository(datasource),
-            CaptionParser(
+        instagramService,
+        IgHandlingService(
+            captionParser = CaptionParser(
                 hashTagRegex = hashTagRegex,
                 mentionTagRegex = mentionTagRegex,
-            )
+            ),
+            igService = instagramService,
+            storageService = storageService,
+            influencerProfileRepository = profileRepository,
+            influencerPostHandlingService = InfluencerPostHandlingService(InfluencerPostRepository(datasource))
         ),
-        InstagramService(igAuthService(), igGraphService()),
-        imageService
+        storageService
     )
     server.start()
     server.blockUntilShutdown()

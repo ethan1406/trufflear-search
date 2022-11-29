@@ -1,4 +1,4 @@
-package com.trufflear.search.trufflesearch.influencer
+package com.trufflear.search.influencer.services
 
 import com.trufflear.search.influencer.InfluencerCoroutineElement
 import com.trufflear.search.influencer.domain.CallSuccess
@@ -8,13 +8,12 @@ import com.trufflear.search.influencer.getProfileImageUploadUrlRequest
 import com.trufflear.search.influencer.getProfileRequest
 import com.trufflear.search.influencer.imageUploadSuccessRequest
 import com.trufflear.search.influencer.network.service.CollectionCreation
-import com.trufflear.search.influencer.network.service.ImageService
+import com.trufflear.search.influencer.network.service.StorageService
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.InsertResult
 import com.trufflear.search.influencer.repositories.ProfileRequest
 import com.trufflear.search.influencer.repositories.ProfileResult
 import com.trufflear.search.influencer.repositories.SearchIndexRepository
-import com.trufflear.search.influencer.services.InfluencerAccountService
 import com.trufflear.search.influencer.signupRequest
 import com.trufflear.search.influencer.updateProfileRequest
 import io.grpc.Status
@@ -47,10 +46,10 @@ class InfluencerAccountServiceTest {
 
     private val influencerProfileRepository = mock<InfluencerProfileRepository>()
     private val searchIndexRepository = mock<SearchIndexRepository>()
-    private val imageService = mock<ImageService>()
+    private val storageService = mock<StorageService>()
 
     private val service = InfluencerAccountService(
-        influencerProfileRepository, searchIndexRepository, imageService
+        influencerProfileRepository, searchIndexRepository, storageService
     )
 
     @Test
@@ -232,7 +231,7 @@ class InfluencerAccountServiceTest {
             whenever(influencerProfileRepository.getPublicProfile(profileRequest))
                 .thenReturn(ProfileResult.Success(influencerProfile))
 
-            whenever(imageService.getPresignedUrl(influencerProfile.profilePicObjectKey))
+            whenever(storageService.getUrl(influencerProfile.profilePicObjectKey))
                 .thenReturn(presignedUrl)
 
             val request = getProfileRequest {}
@@ -247,7 +246,7 @@ class InfluencerAccountServiceTest {
             assertThat(response.influencerProfile.profilePicUrl).isEqualTo(presignedUrl)
 
             verify(influencerProfileRepository).getPublicProfile(profileRequest)
-            verify(imageService).getPresignedUrl(influencerProfile.profilePicObjectKey)
+            verify(storageService).getUrl(influencerProfile.profilePicObjectKey)
         }
 
     @Test
@@ -277,7 +276,7 @@ class InfluencerAccountServiceTest {
             whenever(influencerProfileRepository.getPublicProfile(profileRequest))
                 .thenReturn(ProfileResult.Success(influencerProfile))
 
-            whenever(imageService.getProfileImageUploadUrl(influencerProfile.username)).thenReturn(uploadUrl)
+            whenever(storageService.getProfileImageUploadUrl(influencerProfile.username)).thenReturn(uploadUrl)
 
             val request = getProfileImageUploadUrlRequest { }
 
@@ -287,7 +286,7 @@ class InfluencerAccountServiceTest {
             // ASSERT
             assertThat(response.url).isEqualTo(uploadUrl)
             verify(influencerProfileRepository).getPublicProfile(profileRequest)
-            verify(imageService).getProfileImageUploadUrl(influencerProfile.username)
+            verify(storageService).getProfileImageUploadUrl(influencerProfile.username)
         }
 
     @Test
@@ -320,7 +319,7 @@ class InfluencerAccountServiceTest {
             whenever(influencerProfileRepository.getPublicProfile(profileRequest))
                 .thenReturn(ProfileResult.Success(influencerProfile))
 
-            whenever(imageService.saveProfileImageKey(influencerProfile.username))
+            whenever(storageService.saveProfileImageKey(influencerProfile.username))
                 .thenReturn(CallSuccess)
 
             val request = imageUploadSuccessRequest { }
@@ -331,6 +330,6 @@ class InfluencerAccountServiceTest {
             // ASSERT
             assertThat(response).isNotNull
             verify(influencerProfileRepository).getPublicProfile(profileRequest)
-            verify(imageService).saveProfileImageKey(influencerProfile.username)
+            verify(storageService).saveProfileImageKey(influencerProfile.username)
         }
 }

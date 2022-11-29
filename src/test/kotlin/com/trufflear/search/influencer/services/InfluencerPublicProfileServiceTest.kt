@@ -1,14 +1,13 @@
-package com.trufflear.search.trufflesearch.influencer
+package com.trufflear.search.influencer.services
 
 import com.trufflear.search.influencer.GetInfluencerPublicProfileResponse
 import com.trufflear.search.influencer.domain.InfluencerProfile
 import com.trufflear.search.influencer.getInfluencerPublicProfileRequest
 import com.trufflear.search.influencer.influencerProfile
-import com.trufflear.search.influencer.network.service.ImageService
+import com.trufflear.search.influencer.network.service.StorageService
 import com.trufflear.search.influencer.repositories.ProfileRequest
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.ProfileResult
-import com.trufflear.search.influencer.services.InfluencerPublicProfileService
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -33,9 +32,9 @@ private val profile = InfluencerProfile(
 class InfluencerPublicProfileServiceTest {
 
     private val influencerProfileRepository = mock<InfluencerProfileRepository>()
-    private val imageService = mock<ImageService>()
+    private val storageService = mock<StorageService>()
 
-    private val service = InfluencerPublicProfileService(influencerProfileRepository, imageService)
+    private val service = InfluencerPublicProfileService(influencerProfileRepository, storageService)
 
     @Test
     fun `get influencer public profile should return profile does not exist error when username not found`() =
@@ -82,7 +81,7 @@ class InfluencerPublicProfileServiceTest {
             whenever(influencerProfileRepository.getPublicProfile(getProfileRequest))
                 .thenReturn(ProfileResult.Success(profile))
 
-            whenever(imageService.getPresignedUrl(profile.profilePicObjectKey))
+            whenever(storageService.getUrl(profile.profilePicObjectKey))
                 .thenReturn(null)
 
             val request = getInfluencerPublicProfileRequest {
@@ -103,7 +102,7 @@ class InfluencerPublicProfileServiceTest {
                 }
             )
             verify(influencerProfileRepository).getPublicProfile(getProfileRequest)
-            verify(imageService).getPresignedUrl(profile.profilePicObjectKey)
+            verify(storageService).getUrl(profile.profilePicObjectKey)
         }
 
     @Test
@@ -114,7 +113,7 @@ class InfluencerPublicProfileServiceTest {
             whenever(influencerProfileRepository.getPublicProfile(getProfileRequest))
                 .thenReturn(ProfileResult.Success(profile))
 
-            whenever(imageService.getPresignedUrl(profile.profilePicObjectKey))
+            whenever(storageService.getUrl(profile.profilePicObjectKey))
                 .thenReturn(presignedUrl)
 
             val request = getInfluencerPublicProfileRequest {
@@ -135,6 +134,6 @@ class InfluencerPublicProfileServiceTest {
                 }
             )
             verify(influencerProfileRepository).getPublicProfile(getProfileRequest)
-            verify(imageService).getPresignedUrl(profile.profilePicObjectKey)
+            verify(storageService).getUrl(profile.profilePicObjectKey)
         }
 }

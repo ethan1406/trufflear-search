@@ -1,4 +1,4 @@
-package com.trufflear.search.trufflesearch.frameworks
+package com.trufflear.search.frameworks
 
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonSyntaxException
