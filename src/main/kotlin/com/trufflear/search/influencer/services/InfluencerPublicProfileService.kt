@@ -47,7 +47,7 @@ class InfluencerPublicProfileService(
                         success = GetInfluencerPublicProfileResponse.Success.newBuilder()
                             .setProfile(
                                 influencerProfile {
-                                    profilePicUrl = storageService.getUrl(result.profile.profilePicObjectKey).orEmpty()
+                                    profilePicUrl = storageService.getPresignedUrl(result.profile.profilePicObjectKey).orEmpty()
                                     profileTitle = result.profile.profileTitle
                                     categoryTitle = result.profile.professionCategory
                                     bioDescription = result.profile.bioDescription

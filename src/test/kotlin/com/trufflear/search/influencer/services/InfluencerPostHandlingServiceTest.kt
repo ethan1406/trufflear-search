@@ -1,8 +1,10 @@
 package com.trufflear.search.influencer.services
 
+import com.trufflear.search.frameworks.Result
 import com.trufflear.search.config.IgMediaType
 import com.trufflear.search.influencer.domain.CallSuccess
 import com.trufflear.search.influencer.domain.Post
+import com.trufflear.search.influencer.network.service.StorageService
 import com.trufflear.search.influencer.repositories.InfluencerPostRepository
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -20,14 +22,15 @@ import java.time.Instant
 
 private const val email = "bobo@gmail.com"
 private const val username = "cooking_bobo"
+private const val thumbnailUrl = "imageUrl"
 
 private val post = Post(
     caption = "testing #test @temp",
     hashTags = "#test",
     mentions = "@temp",
     mediaType = IgMediaType.IMAGE.name,
-    thumbnailUrl = "",
-    thumbnailObjectKey = "",
+    thumbnailUrl = thumbnailUrl,
+    thumbnailObjectKey = "key1",
     permalink = "link",
     username = username,
     id = "1",
@@ -38,7 +41,9 @@ class InfluencerPostHandlingServiceTest {
 
     private val repository = mock<InfluencerPostRepository>()
 
-    private val service = InfluencerPostHandlingService(repository)
+    private val storageService = mock<StorageService>()
+
+    private val service = InfluencerPostHandlingService(repository, storageService)
 
     @Test
     fun `handleIncomingPosts should not call anything if incoming posts are empty`() =
@@ -47,7 +52,7 @@ class InfluencerPostHandlingServiceTest {
             val response = service.handleIncomingPosts(email, emptyList())
 
             // ASSERT
-            assertThat(response).isEqualTo(CallSuccess)
+            assertThat(response).isEqualTo(Result.Success(Unit))
             verifyNoInteractions(repository)
         }
 
@@ -61,7 +66,7 @@ class InfluencerPostHandlingServiceTest {
             val response = service.handleIncomingPosts(email, getIgPosts())
 
             // ASSERT
-            assertThat(response).isNull()
+            assertThat(response).isEqualTo(Result.Error(Unit))
             verify(repository).getAllPostIgIds(email)
         }
 
@@ -82,13 +87,19 @@ class InfluencerPostHandlingServiceTest {
                 )
             ).thenReturn(CallSuccess)
 
+            val expectedDeleteSet = setOf("6", "7")
+
             // ACT
             val response = service.handleIncomingPosts(email, getIgPosts())
 
             // ASSERT
-            assertThat(response).isNotNull
-            verify(repository).getAllPostIgIds(email)
+            assertThat(response).isEqualTo(Result.Success(Unit))
 
+            // storage verification
+            verifyNoInteractions(storageService)
+
+            // repository verification
+            verify(repository).getAllPostIgIds(email)
             val emailCaptor = argumentCaptor<String>()
             val postToDelete = argumentCaptor<Set<String>>()
             val postToUpdateCaptor = argumentCaptor<List<Post>>()
@@ -100,7 +111,7 @@ class InfluencerPostHandlingServiceTest {
                 influencerEmail = emailCaptor.capture()
             )
             assertThat(emailCaptor.firstValue).isEqualTo(email)
-            assertThat(postToDelete.firstValue).isEqualTo(setOf("6", "7"))
+            assertThat(postToDelete.firstValue).isEqualTo(expectedDeleteSet)
             assertThat(newPostCaptor.firstValue).isEqualTo(emptyList<Post>())
             assertThat(postToUpdateCaptor.firstValue.map { it.id }).isEqualTo(
                 listOf("1", "2", "3", "4", "5")
@@ -124,13 +135,24 @@ class InfluencerPostHandlingServiceTest {
                     influencerEmail = anyString()
                 )
             ).thenReturn(CallSuccess)
+
+            val deleteSet = setOf("10")
+            val expectedNewPostList = listOf("1", "5")
+
             // ACT
             val response = service.handleIncomingPosts(email, getIgPosts())
 
             // ASSERT
-            assertThat(response).isNotNull
-            verify(repository).getAllPostIgIds(email)
+            assertThat(response).isEqualTo(Result.Success(Unit))
 
+            // storage verification
+            expectedNewPostList.forEach {
+                verify(storageService).uploadImageToKey(thumbnailUrl, "key$it")
+            }
+            verifyNoMoreInteractions(storageService)
+
+            // repository verification
+            verify(repository).getAllPostIgIds(email)
             val emailCaptor = argumentCaptor<String>()
             val postToDelete = argumentCaptor<Set<String>>()
             val postToUpdateCaptor = argumentCaptor<List<Post>>()
@@ -142,11 +164,8 @@ class InfluencerPostHandlingServiceTest {
                 influencerEmail = emailCaptor.capture()
             )
             assertThat(emailCaptor.firstValue).isEqualTo(email)
-            assertThat(postToDelete.firstValue).isEqualTo(setOf("10"))
-
-            assertThat(newPostCaptor.firstValue.map { it.id }).isEqualTo(
-                listOf("1", "5")
-            )
+            assertThat(postToDelete.firstValue).isEqualTo(deleteSet)
+            assertThat(newPostCaptor.firstValue.map { it.id }).isEqualTo(expectedNewPostList)
             assertThat(postToUpdateCaptor.firstValue.map { it.id }).isEqualTo(
                 listOf("2", "3", "4")
             )
@@ -158,9 +177,9 @@ class InfluencerPostHandlingServiceTest {
     private fun getIgPosts(): List<Post> =
         listOf(
             post,
-            post.copy(id = "2"),
-            post.copy(id = "3"),
-            post.copy(id = "4"),
-            post.copy(id = "5"),
+            post.copy(id = "2", thumbnailObjectKey = "key2"),
+            post.copy(id = "3", thumbnailObjectKey = "key3"),
+            post.copy(id = "4", thumbnailObjectKey = "key4"),
+            post.copy(id = "5", thumbnailObjectKey = "key5"),
         )
 }

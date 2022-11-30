@@ -81,7 +81,7 @@ class InfluencerPublicProfileServiceTest {
             whenever(influencerProfileRepository.getPublicProfile(getProfileRequest))
                 .thenReturn(ProfileResult.Success(profile))
 
-            whenever(storageService.getUrl(profile.profilePicObjectKey))
+            whenever(storageService.getPresignedUrl(profile.profilePicObjectKey))
                 .thenReturn(null)
 
             val request = getInfluencerPublicProfileRequest {
@@ -102,7 +102,7 @@ class InfluencerPublicProfileServiceTest {
                 }
             )
             verify(influencerProfileRepository).getPublicProfile(getProfileRequest)
-            verify(storageService).getUrl(profile.profilePicObjectKey)
+            verify(storageService).getPresignedUrl(profile.profilePicObjectKey)
         }
 
     @Test
@@ -113,7 +113,7 @@ class InfluencerPublicProfileServiceTest {
             whenever(influencerProfileRepository.getPublicProfile(getProfileRequest))
                 .thenReturn(ProfileResult.Success(profile))
 
-            whenever(storageService.getUrl(profile.profilePicObjectKey))
+            whenever(storageService.getPresignedUrl(profile.profilePicObjectKey))
                 .thenReturn(presignedUrl)
 
             val request = getInfluencerPublicProfileRequest {
@@ -134,6 +134,6 @@ class InfluencerPublicProfileServiceTest {
                 }
             )
             verify(influencerProfileRepository).getPublicProfile(getProfileRequest)
-            verify(storageService).getUrl(profile.profilePicObjectKey)
+            verify(storageService).getPresignedUrl(profile.profilePicObjectKey)
         }
 }

@@ -106,7 +106,7 @@ fun main() {
             igService = instagramService,
             storageService = storageService,
             influencerProfileRepository = profileRepository,
-            influencerPostHandlingService = InfluencerPostHandlingService(InfluencerPostRepository(datasource))
+            influencerPostHandlingService = InfluencerPostHandlingService(InfluencerPostRepository(datasource), storageService)
         ),
         storageService
     )

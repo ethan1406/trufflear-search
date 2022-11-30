@@ -80,8 +80,7 @@ class InfluencerAccountConnectIgService (
                             igHandlingService.fetchAndStoreUserPosts(
                                 accessToken = result.response.accessToken,
                                 instagramUserId = result.response.userId,
-                                influencerEmail = influencer.email,
-                                shouldDownloadImages = true
+                                influencerEmail = influencer.email
                             )
                         }
                     ).awaitAll()
@@ -118,8 +117,7 @@ class InfluencerAccountConnectIgService (
         val result = igHandlingService.fetchAndStoreUserPosts(
             accessToken = igAuth.accessToken,
             instagramUserId = igAuth.instagramId,
-            influencerEmail = influencer.email,
-            shouldDownloadImages = false
+            influencerEmail = influencer.email
         )
 
         return when (result) {

@@ -44,7 +44,6 @@ class InfluencerPostRepository(
         newPosts: List<Post>,
         influencerEmail: String
     ): CallSuccess? =
-
         withContext(Dispatchers.IO) {
             try {
                 transaction(Database.connect(dataSource)) {

@@ -64,8 +64,6 @@ dependencies {
 	implementation("com.amazonaws:aws-java-sdk-s3:1.12.347")
 	implementation("org.bitbucket.b_c:jose4j:0.9.2")
 
-	implementation("com.github.jai-imageio:jai-imageio-core:1.4.0")
-
 	implementation("com.squareup.retrofit2:retrofit:2.9.0")
 	implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
 	implementation ("com.google.code.gson:gson:2.10")

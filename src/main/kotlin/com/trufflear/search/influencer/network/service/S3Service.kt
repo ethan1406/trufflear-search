@@ -12,6 +12,7 @@ import com.trufflear.search.influencer.domain.CallSuccess
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import mu.KotlinLogging
 import java.awt.Image
+import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.net.URL
 import java.time.Instant
@@ -53,12 +54,13 @@ class S3Service(
 
     override fun uploadImageToKey(imageUrl: String, objectKey: String): Result<Unit, Unit> =
         try {
-            logger.debug { "generating presigned url for image upload: $objectKey" }
+            logger.debug { "uploading image to key: $objectKey" }
 
-            val stream = URL(imageUrl).openStream()
+            val contents = IOUtils.toByteArray(URL(imageUrl).openStream())
+            val stream = ByteArrayInputStream(contents)
             val metadata = ObjectMetadata().apply {
                 contentType = contentType
-                contentLength = IOUtils.toByteArray(stream).size.toLong()
+                contentLength = contents.size.toLong()
             }
 
             client.putObject(s3Bucket, objectKey, stream, metadata)
@@ -80,13 +82,31 @@ class S3Service(
             Result.Error(Unit)
         }
 
+    override fun deleteObject(objectKey: String): Result<Unit, Unit> =
+        try {
+            logger.debug { "deleting object with key: $objectKey" }
+
+            client.deleteObject(s3Bucket, objectKey)
+
+            Result.Success(Unit)
+        } catch (e: AmazonServiceException) {
+            logger.error(e) { "error deleting object with key: $objectKey" }
+            Result.Error(Unit)
+        } catch (e: SdkClientException) {
+            logger.error(e) { "error deleting object with key: $objectKey" }
+            Result.Error(Unit)
+        } catch (e: Exception) {
+            logger.error(e) { "error deleting object with key: $objectKey" }
+            Result.Error(Unit)
+        }
+
     override fun getThumbnailObjectKey(username: String, postId: String): String =
         getPostThumbnailObjectKey(username, postId)
 
     override suspend fun saveProfileImageKey(username: String): CallSuccess? =
         profileRepository.saveProfileImageKey(username, getProfileImageKey(username))
 
-    override fun getUrl(objectKey: String, shoudPresign: Boolean): String? =
+    override fun getPresignedUrl(objectKey: String): String? =
         try {
             logger.debug { "generating url for profile image (GET) for object key: $objectKey" }
             if (objectKey.isEmpty()) {
@@ -111,7 +131,7 @@ class S3Service(
 
     private fun getProfileImageKey(username: String) = "$profilePicS3Directory/$username.$imageType"
 
-    private fun getPostThumbnailObjectKey(username: String, postId: String) = "$thumbnailS3Directory/$username/$postId"
+    private fun getPostThumbnailObjectKey(username: String, postId: String) = "$thumbnailS3Directory/$username/$postId.$imageType"
 
     private fun getExpiration(): Date =
         Date().apply {

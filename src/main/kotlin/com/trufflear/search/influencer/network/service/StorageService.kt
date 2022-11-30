@@ -7,9 +7,11 @@ interface StorageService {
 
     fun getProfileImageUploadUrl(username: String): String?
 
-    fun getUrl(objectKey: String, shoudPresign: Boolean = true): String?
+    fun getPresignedUrl(objectKey: String): String?
 
     fun uploadImageToKey(imageUrl: String, objectKey: String): Result<Unit, Unit>
+
+    fun deleteObject(objectKey: String): Result<Unit, Unit>
 
     fun getThumbnailObjectKey(username: String, postId: String): String
 

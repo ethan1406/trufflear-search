@@ -95,7 +95,7 @@ internal class InfluencerAccountService(
             is ProfileResult.Success -> {
                 getProfileResponse {
                     influencerProfile = influencerProfile {
-                        profilePicUrl = storageService.getUrl(result.profile.profilePicObjectKey).orEmpty()
+                        profilePicUrl = storageService.getPresignedUrl(result.profile.profilePicObjectKey).orEmpty()
                         profileTitle = result.profile.profileTitle
                         categoryTitle = result.profile.professionCategory
                         bioDescription = result.profile.bioDescription

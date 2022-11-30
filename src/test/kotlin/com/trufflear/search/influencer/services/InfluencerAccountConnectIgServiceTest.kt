@@ -8,7 +8,6 @@ import com.trufflear.search.influencer.domain.CallSuccess
 import com.trufflear.search.influencer.domain.IgAuth
 import com.trufflear.search.influencer.domain.Influencer
 import com.trufflear.search.influencer.network.model.IgLongLivedTokenResponse
-import com.trufflear.search.influencer.network.model.IgPost
 import com.trufflear.search.influencer.network.model.IgShortLivedTokenResponse
 import com.trufflear.search.influencer.network.model.IgUserInfo
 import com.trufflear.search.influencer.network.service.IgServiceResult
@@ -157,8 +156,7 @@ class InfluencerAccountConnectIgServiceTest {
             verify(igHandlingService).fetchAndStoreUserPosts(
                 influencerEmail = influencer.email,
                 instagramUserId = igUserId,
-                accessToken = shortAccessToken,
-                shouldDownloadImages = true
+                accessToken = shortAccessToken
             )
         }
 
@@ -170,8 +168,7 @@ class InfluencerAccountConnectIgServiceTest {
                 igHandlingService.fetchAndStoreUserPosts(
                     influencerEmail = influencer.email,
                     instagramUserId = igUserId,
-                    accessToken = shortAccessToken,
-                    shouldDownloadImages = true
+                    accessToken = shortAccessToken
                 )
             ).doReturn(Result.Error(IgHandlingService.Error.Unknown))
 
@@ -192,8 +189,7 @@ class InfluencerAccountConnectIgServiceTest {
             verify(igHandlingService).fetchAndStoreUserPosts(
                 influencerEmail = influencer.email,
                 instagramUserId = igUserId,
-                accessToken = shortAccessToken,
-                shouldDownloadImages = true
+                accessToken = shortAccessToken
             )
         }
 
@@ -219,8 +215,7 @@ class InfluencerAccountConnectIgServiceTest {
             verify(igHandlingService).fetchAndStoreUserPosts(
                 influencerEmail = influencer.email,
                 instagramUserId = igUserId,
-                accessToken = shortAccessToken,
-                shouldDownloadImages = true
+                accessToken = shortAccessToken
             )
         }
 
@@ -270,8 +265,7 @@ class InfluencerAccountConnectIgServiceTest {
                 igHandlingService.fetchAndStoreUserPosts(
                     influencerEmail = influencer.email,
                     instagramUserId = igUserId,
-                    accessToken = longAccessToken,
-                    shouldDownloadImages = false
+                    accessToken = longAccessToken
                 )
             ).doReturn(Result.Error(IgHandlingService.Error.Unknown))
 
@@ -287,8 +281,7 @@ class InfluencerAccountConnectIgServiceTest {
             verify(igHandlingService).fetchAndStoreUserPosts(
                 influencerEmail = influencer.email,
                 instagramUserId = igUserId,
-                accessToken = longAccessToken,
-                shouldDownloadImages = false
+                accessToken = longAccessToken
             )
         }
 
@@ -300,8 +293,7 @@ class InfluencerAccountConnectIgServiceTest {
                 igHandlingService.fetchAndStoreUserPosts(
                     influencerEmail = influencer.email,
                     instagramUserId = igUserId,
-                    accessToken = longAccessToken,
-                    shouldDownloadImages = false
+                    accessToken = longAccessToken
                 )
             ).thenReturn(Result.Success(Unit))
 
@@ -318,8 +310,7 @@ class InfluencerAccountConnectIgServiceTest {
             verify(igHandlingService).fetchAndStoreUserPosts(
                 influencerEmail = influencer.email,
                 instagramUserId = igUserId,
-                accessToken = longAccessToken,
-                shouldDownloadImages = false
+                accessToken = longAccessToken
             )
         }
 }

@@ -72,8 +72,7 @@ class IgHandlingService(
     internal suspend fun fetchAndStoreUserPosts(
         accessToken: String,
         instagramUserId: String,
-        influencerEmail: String,
-        shouldDownloadImages: Boolean = false
+        influencerEmail: String
     ): Result<Unit, Error> {
         logger.info ("getting user media for $influencerEmail")
 
@@ -86,30 +85,14 @@ class IgHandlingService(
             is Result.Error -> igPostResult
             is Result.Success -> {
                 val posts = igPostResult.value.map { it.toPostDomain(captionParser, storageService, logger) }
-                withContext(Dispatchers.IO) {
-                    val imageTasks = if (shouldDownloadImages) {
-                        posts.map {
-                                async {
-                                    storageService.uploadImageToKey(
-                                        imageUrl = it.thumbnailUrl,
-                                        objectKey = it.thumbnailObjectKey
-                                    )
-                                }
-                            }
-                    } else { listOf() }
+                val handleResult = influencerPostHandlingService.handleIncomingPosts(
+                    influencerEmail = influencerEmail,
+                    incomingPosts = posts
+                )
 
-                    val handlePostTask = async {
-                        influencerPostHandlingService.handleIncomingPosts(
-                            influencerEmail = influencerEmail,
-                            incomingPosts = posts
-                        )
-                    }
-
-                    handlePostTask.await()?.let {
-                        imageTasks.awaitAll()
-                        Result.Success(Unit)
-                    } ?: Result.Error(Error.Unknown)
-
+                when (handleResult) {
+                    is Result.Error -> Result.Error(Error.Unknown)
+                    is Result.Success -> Result.Success(Unit)
                 }
             }
         }

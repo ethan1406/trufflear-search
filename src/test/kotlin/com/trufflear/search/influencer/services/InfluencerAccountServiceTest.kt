@@ -231,7 +231,7 @@ class InfluencerAccountServiceTest {
             whenever(influencerProfileRepository.getPublicProfile(profileRequest))
                 .thenReturn(ProfileResult.Success(influencerProfile))
 
-            whenever(storageService.getUrl(influencerProfile.profilePicObjectKey))
+            whenever(storageService.getPresignedUrl(influencerProfile.profilePicObjectKey))
                 .thenReturn(presignedUrl)
 
             val request = getProfileRequest {}
@@ -246,7 +246,7 @@ class InfluencerAccountServiceTest {
             assertThat(response.influencerProfile.profilePicUrl).isEqualTo(presignedUrl)
 
             verify(influencerProfileRepository).getPublicProfile(profileRequest)
-            verify(storageService).getUrl(influencerProfile.profilePicObjectKey)
+            verify(storageService).getPresignedUrl(influencerProfile.profilePicObjectKey)
         }
 
     @Test

@@ -96,7 +96,7 @@ class IgHandlingServiceTest {
     private val postHandlingService = mock<InfluencerPostHandlingService> {
         onBlocking {
             handleIncomingPosts(eq(influencer.email), anyList())
-        } doReturn CallSuccess
+        } doReturn Result.Success(Unit)
     }
 
     private val captionParser = mock<CaptionParser>{
@@ -207,8 +207,7 @@ class IgHandlingServiceTest {
             val result = service.fetchAndStoreUserPosts(
                 accessToken = shortAccessToken,
                 instagramUserId = igUserId,
-                influencerEmail = influencer.email,
-                shouldDownloadImages = false
+                influencerEmail = influencer.email
             )
 
             // ASSERT
@@ -246,8 +245,7 @@ class IgHandlingServiceTest {
             val result = service.fetchAndStoreUserPosts(
                 accessToken = shortAccessToken,
                 instagramUserId = igUserId,
-                influencerEmail = influencer.email,
-                shouldDownloadImages = false
+                influencerEmail = influencer.email
             )
 
             // ASSERT
@@ -282,14 +280,13 @@ class IgHandlingServiceTest {
                     )
                 )
 
-            whenever(postHandlingService.handleIncomingPosts(eq(influencer.email), anyList())).thenReturn(null)
+            whenever(postHandlingService.handleIncomingPosts(eq(influencer.email), anyList())).thenReturn(Result.Error(Unit))
 
             // ACT
             val result = service.fetchAndStoreUserPosts(
                 accessToken = shortAccessToken,
                 instagramUserId = igUserId,
-                influencerEmail = influencer.email,
-                shouldDownloadImages = false
+                influencerEmail = influencer.email
             )
 
             // ASSERT
@@ -333,8 +330,7 @@ class IgHandlingServiceTest {
             val result = service.fetchAndStoreUserPosts(
                 accessToken = shortAccessToken,
                 instagramUserId = igUserId,
-                influencerEmail = influencer.email,
-                shouldDownloadImages = false
+                influencerEmail = influencer.email
             )
 
             // ASSERT
@@ -378,8 +374,7 @@ class IgHandlingServiceTest {
             val result = service.fetchAndStoreUserPosts(
                 accessToken = shortAccessToken,
                 instagramUserId = igUserId,
-                influencerEmail = influencer.email,
-                shouldDownloadImages = true
+                influencerEmail = influencer.email
             )
 
             // ASSERT
@@ -393,9 +388,5 @@ class IgHandlingServiceTest {
             verify(postHandlingService).handleIncomingPosts(emailCaptor.capture(), postListCaptor.capture())
             assertThat(emailCaptor.firstValue).isEqualTo(influencer.email)
             assertThat(postListCaptor.firstValue.map { it.id }).isEqualTo(listOf("1", "2", "3", "4", "5"))
-
-            (igPostList1 + igPostList2).forEach {
-                verify(storageService).uploadImageToKey(it.mediaUrl, thumbnailKey)
-            }
         }
 }
