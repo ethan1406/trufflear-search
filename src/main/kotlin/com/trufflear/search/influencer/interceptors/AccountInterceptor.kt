@@ -81,11 +81,12 @@ class AccountInterceptor: CoroutineContextServerInterceptor() {
     }
 
     private fun mapToInfluencer(claimMap: Map<String, Any>): Influencer {
-        //val name = (claimMap["name"] as? String) ?: throw Exception("name is not in the token")
+        val name = (claimMap["name"] as? String) ?: throw Exception("name is not in the token")
         val email = (claimMap["email"] as? String) ?: throw Exception("email is not in the token")
         val emailVerified = (claimMap["email_verified"] as? Boolean) ?: throw Exception("email verification is not in the token")
 
         return Influencer(
+            name = name,
             email = email,
             emailVerified = emailVerified
         )

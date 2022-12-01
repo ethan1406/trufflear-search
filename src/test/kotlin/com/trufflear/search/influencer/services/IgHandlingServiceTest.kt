@@ -35,6 +35,7 @@ import org.mockito.kotlin.whenever
 
 private val influencer = Influencer(
     emailVerified = false,
+    name = "Bobo Chang",
     email = "bobo@gmail.com"
 )
 
