@@ -21,18 +21,18 @@
 //            username = "oyster_bamboo"
 //        }
 //        val request = connectIgUserMediaRequest {
-//            instagramAuthCode = "AQCqdcOyo332_-LYe_xK3SDYk60wIIwSpehd0hoog7mG4JGOdoU-hCJM-uTHdMsHsPZbnKm0REVY4YGn0IoIv5YPVeUqQKnurvXUV4Aby52R6ucpFvvuLnWJETJeWxsRT2W0zJmhK1CDS6r2HPrefbfn8HYlU9PE70Zd7LGnD4sjUs6bz_jjTc3hlk-zm3_7oCzkDxdZp6bUxL-_-zw_76XF6qurFb5JLyymk9Fq1A1iVA"
+//            instagramAuthCode = "AQDMP0lYrXeusvWLpyrWRhWPIY34Awzyh4iJ2r7KTi7WMX5e64F_gEhx9uIaWtekJ9QlXHDHEnY5bqMJUmHhXA4yQWfTI6ED4S9k9Al1MQJF2mTzSu2d1TDl2xYTj5ylETGmqPq2mGgx0SzEYONXbIv8pKOnyVpjLpqXJf4NjhEgrd8xDAoT9zsPm2cPTbt9qON279AqE8u_Q3NEKxoeA2Tus63wts3PxmSdERutzliqTA"
 //        }
 //
-//
+//        //val response = accountStub.signup(signupRequest)
 //        //val response = accountIgStub.getIgAuthorizationWindowUrl(getIgAuthorizationWindowUrlRequest {  })
 //        //val response = accountStub.getProfile(getProfileRequest {})
 //        //val response = accountStub.updateProfile(updateProfileRequest)
-//        //val response = accountIgStub.connectIgUserMedia(request)
+//        val response = accountIgStub.connectIgUserMedia(request)
 //        //val response = publicStub.getInfluencerPublicProfile(getAccountRequest)
 //
 //        println("got it")
-//        println(accountStub.signup(signupRequest))
+//        println(response)
 //    }
 //
 //    override fun close() {
@@ -45,7 +45,7 @@
 //
 //    val metadata = Metadata()
 //
-//    metadata.put(Metadata.Key.of("id-token", Metadata.ASCII_STRING_MARSHALLER), "eyJraWQiOiJxeUpjc1ZKQUY1em9HeSt3WDhicXJScjZLbmQxTk5nRFpVU1RWV29uOGVvPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI0MzU1ODQ5Zi01OGFiLTRjYWMtOTM4Ni1kYmM1ZGM3MDA2NjIiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLXdlc3QtMS5hbWF6b25hd3MuY29tXC91cy13ZXN0LTFfa1NhaGl2cHVwIiwiY29nbml0bzp1c2VybmFtZSI6IjQzNTU4NDlmLTU4YWItNGNhYy05Mzg2LWRiYzVkYzcwMDY2MiIsIm9yaWdpbl9qdGkiOiI5NzhhMzMyYi0xOTAyLTRlYzctODY0NC0wNWFjOTMyNGU5OWYiLCJhdWQiOiI5aGZxcnFrZTFuM2M0b2dyaWo3MzVsZjVpIiwiZXZlbnRfaWQiOiI0NTJjNzJhZC00ZTE4LTQ5NmQtYTYxZi1hYWE1MzUwNmJmMTkiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTY3MDQ2NzU5MCwibmFtZSI6IkV0aGFuIENoYW5nIiwiZXhwIjoxNjcwNDcxMTkwLCJpYXQiOjE2NzA0Njc1OTAsImp0aSI6IjU2YjliNjIzLTQ3OTYtNDRjNy04MmEzLWZhZTRhMGI5OTQzMyIsImVtYWlsIjoiZXRoYW4xNDA2QGdtYWlsLmNvbSJ9.vPKXWmQzrBwN765es09uoI0qL7fiTq1RBVszaA9NRSmbaPU7tgX_xZaC2cv8ECct2O6FdL-M9CJo98tTPZIRiMGIIUpu253ekAwHgfD1kDq3HcwhE12lZ1LaXkyzJZb7IrDfmv7Ddl5lTVr5IZSEy5YfQhJsezHQN_vpEjT9msmPOp8KdKic6ZKL5xXFgCeupggklVJ9eNcwMPorQivhnKVigWr73NA55lohUQdM2cvrmyyXarUzhC3l0OoyRHgN777--FjvZbkGhnF2fKC97fbOisJ90yjnCF2VgFWnPjjo0fXS-fS5UY3a2f0Sptu2J6HnfcD-SqRDbeMaxapJ_g")
+//    metadata.put(Metadata.Key.of("id-token", Metadata.ASCII_STRING_MARSHALLER), "eyJraWQiOiJxeUpjc1ZKQUY1em9HeSt3WDhicXJScjZLbmQxTk5nRFpVU1RWV29uOGVvPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI0MzU1ODQ5Zi01OGFiLTRjYWMtOTM4Ni1kYmM1ZGM3MDA2NjIiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLXdlc3QtMS5hbWF6b25hd3MuY29tXC91cy13ZXN0LTFfa1NhaGl2cHVwIiwiY29nbml0bzp1c2VybmFtZSI6IjQzNTU4NDlmLTU4YWItNGNhYy05Mzg2LWRiYzVkYzcwMDY2MiIsIm9yaWdpbl9qdGkiOiJlYzcxOTcyYS0wZDc1LTQwNjUtODA1YS0yMDdjOGM5YzNlY2EiLCJhdWQiOiI5aGZxcnFrZTFuM2M0b2dyaWo3MzVsZjVpIiwiZXZlbnRfaWQiOiI4MTM1YjFhNi0zOTUzLTRmZjUtODBkYy03ZWY3M2MzMGQ2YmMiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTY3MDQ3NzkyNiwibmFtZSI6IkV0aGFuIENoYW5nIiwiZXhwIjoxNjcwNDgxNTI2LCJpYXQiOjE2NzA0Nzc5MjYsImp0aSI6IjlhNjMzMmY0LTgwZTUtNDkwNy05ZGIyLWFiOGFjNTlmNjUzMSIsImVtYWlsIjoiZXRoYW4xNDA2QGdtYWlsLmNvbSJ9.lcDeEVvZ7B6VwA4yH-GMVG9z6C8Yiy5ZNaAAfTOf4Fn1nNTBaXRDv8TgQuRmgze6X8RqPy2aJBP_jnplt0XIGXnlYkadd9o5XP_wCRs2qux0zDinpYWC9-o8-ko_nX5IUlt4U5Pwe2oV1mkHznyyWMWvQD4mILdYCi_X7nqNADm732-3kqgFvapxDJVrQFm3hDPKxgm_pfb5Y8hzMbyHCPEskUd-WA7ywBg1iIQEI4nbZeM87AM0rou0U1xgSR_rOi7QO6RJjTnszz4yt5iEtKatJxDvOihJ5LpbdD9slwPwdC5D9ZZdk-J-BCw3VXnOeAqCeCZWK-GmVARzotCvfw")
 //
 //    val channel = ManagedChannelBuilder
 //        .forAddress("localhost", port)

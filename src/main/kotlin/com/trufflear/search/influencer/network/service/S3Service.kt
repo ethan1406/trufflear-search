@@ -22,7 +22,7 @@ private const val contentType = "image/jpeg"
 private const val profilePicS3Directory = "prod/profile-pics"
 private const val thumbnailS3Directory = "prod/post-thumbnails"
 private const val imageType = "jpg"
-private const val s3Bucket = "trufflear"
+private const val s3Bucket = "trufflear-search"
 
 class S3Service(
     val client: AmazonS3,

@@ -75,7 +75,7 @@ class InfluencerPostRepository(
                 }
                 CallSuccess
             } catch (e: Exception) {
-                logger.error(e) { "error deleting posts" }
+                logger.error(e) { "error handling in coming posts posts" }
                 null
             }
         }
