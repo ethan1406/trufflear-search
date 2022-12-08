@@ -3,15 +3,16 @@ package com.trufflear.search.config
 import org.jose4j.jwk.JsonWebKeySet
 
 internal val jsonWebKeySet = JsonWebKeySet(
-    "{\"keys\":[{\"alg\":\"RS256\",\"e\":\"AQAB\",\"kid\":\"wGWw5TUEWLEogkgRMBNpa8vyKV5yeiZOhzMdIWQMuRE=\",\"kty\":\"RSA\",\"n\":\"7dR9ObkQQijb2xXbRzNx" +
-            "J35D3g3qd1muOP6LG_2HAqmNWVsA6B77gIPh1FDqdmUmFYvL6mtPKH90J7yb_EeVBHzpzt0_TczUX8pB7bxcaU5QCqNMA1kndbzPfQmI2ZTMuZBhHlHhvIYb7DqNzTqjgwLUBz" +
-            "enWirdb0yLPxogUIH_RbkbDA49lgzqW6-7qz2zlV-0iREfTGr0y3U1hYDeGU5kJ9iaqvhulTatRtzuku4JKBL8Z7PE0NCsW1MpQUYlqTpFS64Rz-DXCVpV4HFzlKCJwp_EKeoC" +
-            "uVEx3PkcM9W7DtqokN9eWMkOS2eVwJjcXkA1J3OsMSPkOGbhZVmp2w\",\"use\":\"sig\"},{\"alg\":\"RS256\",\"e\":\"AQAB\",\"kid\":\"SrmuUVeXnPzn78PFiN2" +
-            "uaJ3HghFNYdxSvtBsr3L2xuM=\",\"kty\":\"RSA\",\"n\":\"vcIBTimQ-pcaHzQOFZpQbbGx4GZ5pFVCplNlxX6w-GHFGHSHaVwOs5aHGgmhXjpGIFx4bG3G6AW89G8z4kw" +
-            "Db6p1lffqADIlSp_EeoehhWG7K2B2hOigyLM1-CIw0jB97EzZqHaD9ySdt77rQmwOLAV6dzak4vStfO3DedFXqDw37rDLart5Y5pgJGkn2y2bnFPlP1rqJ9KWN8KCRUcO42M_i" +
-            "ydQAQ68jbvzXHd_S9gAuO8sVcSBow7tI_CzHfOXsUANoqHcO01NDti67PztqJN4XFq2S0cZ0-e0_zDmYa0U0uxtyxs7UvGAEcFVA-QNHqFBICWLUe9POtLldPPrnQ\",\"use\":\"sig\"}]}"
+    "{\"keys\":[{\"alg\":\"RS256\",\"e\":\"AQAB\",\"kid\":\"qyJcsVJAF5zoGy+wX8bqrRr6Knd1NNgDZUSTVWon8eo=\",\"kty\":\"RSA\",\"n\":\"1ipt" +
+            "8cgpD80sIJGYGYfRq1qCfCovAATy6G7iTeXnD0zXyBWCxeZtu36YWzEW_vaumzYxwkwccTx9G-wpRiON23dy6KwxH3ZOw5eipe0YMtrsu4OBwAJlrWiCiUYIajUapKB4dz" +
+            "EjOI51sytzv_69SzlA00i8sto99sOkzyi0O8YgUXLxwnmDH8PFf_Q2aFhJi9PwIUKNIIFGIPkxcKAEPqpytSfKOTha_v2YHLrEvtFF5SCUJUoNcyzL2EI0i08GATxOPd" +
+            "YJJMvuIctEp-yCZxDzR0CnjXJEEMqblZCl1Qn1f3PukrzEeADzk21wwaJRohT3R5RtarrTohLl4tpo-w\",\"use\":\"sig\"},{\"alg\":\"RS256\",\"e\":\"A" +
+            "QAB\",\"kid\":\"L4oLY7pjCRtn8Dts6JvuQhZCoqJQZiHuXpCO59oxBlM=\",\"kty\":\"RSA\",\"n\":\"wyXJycxHIzzUfl5-sGiOhXw8SfNVUGYTvMft2T0zAsq" +
+            "YHZvgx-Vs8Pw819ucAEnmZM_gqkJWlrVdbigL2eEymNaotOVJXfbPc64yKcifS95dBH6GcysYvadTSkDb38FHSWsYBO5kmVoEaKfnmDK2VevbK6KV6Eikf6bSytFU0fQnC" +
+            "BJpFkfXwG0bOsOk_sAB2VYNaNUmC85ewFkkAqK_UkY7HPwtO4d0stEQRc-bz_tckxClM26O72-JdSkvP2JMD0XeF4SHpeZm8i6I98q8Rh2uSbmi_pAD149mG4pSJho0W_p" +
+            "qCkW_MRd7BJqd4Uk-cShrQOiH1-VDQ2Aw-_JORQ\",\"use\":\"sig\"}]}"
 )
 
-internal val audience = "2aup1dvq1ka522ijtemra2o8sq"
+internal val audience = "9hfqrqke1n3c4ogrij735lf5i"
 
-internal val issuer = "https://cognito-idp.us-west-1.amazonaws.com/us-west-1_4EQ8Ds6Jc"
+internal val issuer = "https://cognito-idp.us-west-1.amazonaws.com/us-west-1_kSahivpup"
