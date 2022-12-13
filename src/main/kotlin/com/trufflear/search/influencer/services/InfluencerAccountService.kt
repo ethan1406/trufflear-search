@@ -100,6 +100,7 @@ internal class InfluencerAccountService(
                         categoryTitle = result.profile.professionCategory
                         bioDescription = result.profile.bioDescription
                         email = result.profile.email
+                        username = result.profile.username
                     }
                     isProfileLive = result.profile.isProfileLive
                 }

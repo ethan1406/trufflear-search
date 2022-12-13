@@ -99,6 +99,7 @@ class InfluencerPublicProfileServiceTest {
                     categoryTitle = profile.professionCategory
                     bioDescription = profile.bioDescription
                     email = profile.email
+                    username = profile.username
                 }
             )
             verify(influencerProfileRepository).getPublicProfile(getProfileRequest)
@@ -131,6 +132,7 @@ class InfluencerPublicProfileServiceTest {
                     categoryTitle = profile.professionCategory
                     bioDescription = profile.bioDescription
                     email = profile.email
+                    username = profile.username
                 }
             )
             verify(influencerProfileRepository).getPublicProfile(getProfileRequest)

@@ -52,6 +52,7 @@ class InfluencerPublicProfileService(
                                     categoryTitle = result.profile.professionCategory
                                     bioDescription = result.profile.bioDescription
                                     email = result.profile.email
+                                    username = result.profile.username
                                 }
                             ).build()
                     }
