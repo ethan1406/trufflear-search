@@ -4,7 +4,7 @@ internal const val clientId = "581169537105981"
 
 internal const val appSecret = "faa9243a2cda424e7287fd9dbcc24e69"
 
-internal const val redirectUri = "https://admin.trufflear.com/profile"
+internal val redirectUri = System.getenv("IG_REDIRECT_URI") ?: "https://admin.trufflear.com/profile"
 
 private const val apiIgSubdomain = "api.instagram.com"
 
