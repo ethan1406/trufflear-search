@@ -44,7 +44,7 @@ internal class InfluencerAccountService(
     private val logger = KotlinLogging.logger {}
 
     override suspend fun signup(request: SignupRequest): SignupResponse {
-        logger.debug { "user signing up" }
+        logger.debug { "influencer signing up" }
         val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
             ?: throw StatusException(Status.UNAUTHENTICATED)
 
@@ -65,7 +65,7 @@ internal class InfluencerAccountService(
     }
 
     override suspend fun updateProfile(request: UpdateProfileRequest): UpdateProfileRequestResponse {
-        logger.debug { "user updating profile" }
+        logger.debug { "influencer updating profile" }
 
         val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
             ?: throw StatusException(Status.UNAUTHENTICATED)
@@ -86,6 +86,7 @@ internal class InfluencerAccountService(
     }
 
     override suspend fun getProfile(request: GetProfileRequest): GetProfileResponse {
+        logger.debug { "influencer getting profile" }
         val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
             ?: throw StatusException(Status.UNAUTHENTICATED)
 
@@ -109,6 +110,7 @@ internal class InfluencerAccountService(
     }
 
     override suspend fun getProfileImageUploadUrl(request: GetProfileImageUploadUrlRequest): GetProfileImageUploadUrlResponse {
+        logger.debug { "influencer getting profile image upload url" }
         val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
             ?: throw StatusException(Status.UNAUTHENTICATED)
 
@@ -132,6 +134,7 @@ internal class InfluencerAccountService(
     }
 
     override suspend fun succeedInImageUpload(request: ImageUploadSuccessRequest): ImageUploadSuccessResponse {
+        logger.debug { "influencer succeeds in image upload" }
         val influencer = coroutineContext[InfluencerCoroutineElement]?.influencer
             ?: throw StatusException(Status.UNAUTHENTICATED)
 
@@ -143,6 +146,7 @@ internal class InfluencerAccountService(
                 if (username.isEmpty()) {
                     throw StatusException(Status.PERMISSION_DENIED.withDescription("user must connect with instagram first"))
                 }
+                logger.debug { "Saving profile image key for $username" }
                 storageService.saveProfileImageKey(username) ?: throw StatusException(Status.UNKNOWN)
 
                 imageUploadSuccessResponse { }

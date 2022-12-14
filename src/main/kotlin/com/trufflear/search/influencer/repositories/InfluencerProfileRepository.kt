@@ -126,6 +126,7 @@ class InfluencerProfileRepository(
             try {
                 transaction(Database.connect(dataSource)) {
                     addLogger(StdOutSqlLogger)
+                    logger.debug { "Inserting image key: $imageKey for user: $username" }
 
                     InfluencerTable.update({ InfluencerTable.username eq username}) {
                         it[profileImageObjectKey] = imageKey

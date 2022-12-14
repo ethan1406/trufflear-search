@@ -103,8 +103,11 @@ class S3Service(
     override fun getThumbnailObjectKey(username: String, postId: String): String =
         getPostThumbnailObjectKey(username, postId)
 
-    override suspend fun saveProfileImageKey(username: String): CallSuccess? =
-        profileRepository.saveProfileImageKey(username, getProfileImageKey(username))
+    override suspend fun saveProfileImageKey(username: String): CallSuccess? {
+        val key = getProfileImageKey(username)
+        logger.debug { "Saving profile image key: $key" }
+        return profileRepository.saveProfileImageKey(username, key)
+    }
 
     override fun getPresignedUrl(objectKey: String): String? =
         try {
