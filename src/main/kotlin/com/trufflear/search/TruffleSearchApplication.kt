@@ -8,20 +8,20 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.trufflear.search.config.igApiSubdomainBaseUrl
 import com.trufflear.search.config.igGraphSubdomainBaseUrl
 import com.trufflear.search.influencer.AccountInterceptor
-import com.trufflear.search.influencer.services.InfluencerPostHandlingService
 import com.trufflear.search.influencer.database.scripts.CreateInfluencerScript
-import com.trufflear.search.influencer.services.InfluencerAccountConnectIgService
-import com.trufflear.search.influencer.services.InfluencerAccountService
 import com.trufflear.search.influencer.network.service.IgAuthService
 import com.trufflear.search.influencer.network.service.IgGraphService
-import com.trufflear.search.influencer.network.service.StorageService
 import com.trufflear.search.influencer.network.service.InstagramService
 import com.trufflear.search.influencer.network.service.S3Service
 import com.trufflear.search.influencer.network.service.SearchIndexService
+import com.trufflear.search.influencer.network.service.StorageService
 import com.trufflear.search.influencer.repositories.InfluencerPostRepository
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.repositories.SearchIndexRepository
 import com.trufflear.search.influencer.services.IgHandlingService
+import com.trufflear.search.influencer.services.InfluencerAccountConnectIgService
+import com.trufflear.search.influencer.services.InfluencerAccountService
+import com.trufflear.search.influencer.services.InfluencerPostHandlingService
 import com.trufflear.search.influencer.services.InfluencerPublicProfileService
 import com.trufflear.search.influencer.util.CaptionParser
 import com.trufflear.search.influencer.util.hashTagRegex
@@ -31,6 +31,8 @@ import com.zaxxer.hikari.HikariDataSource
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.grpc.ServerInterceptors
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import org.apache.log4j.BasicConfigurator
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -126,10 +128,19 @@ private fun getS3Client() = AmazonS3ClientBuilder.standard()
     )
     .build()
 
+private val gsonConverterFactory = GsonConverterFactory.create()
+
+private fun getOkHttpClient(): OkHttpClient {
+    val interceptor = HttpLoggingInterceptor()
+    interceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS)
+    return OkHttpClient.Builder().addInterceptor(interceptor).build()
+}
+
 private fun getIgApiSubdomainRetrofit() =
     Retrofit.Builder()
         .baseUrl(igApiSubdomainBaseUrl)
-        .addConverterFactory(GsonConverterFactory.create())
+        .client(getOkHttpClient())
+        .addConverterFactory(gsonConverterFactory)
         .build()
 
 private fun igAuthService() = getIgApiSubdomainRetrofit().create(IgAuthService::class.java)
@@ -137,7 +148,8 @@ private fun igAuthService() = getIgApiSubdomainRetrofit().create(IgAuthService::
 private fun getIgGraphSubdomainRetrofit() =
     Retrofit.Builder()
         .baseUrl(igGraphSubdomainBaseUrl)
-        .addConverterFactory(GsonConverterFactory.create())
+        .client(getOkHttpClient())
+        .addConverterFactory(gsonConverterFactory)
         .build()
 
 private fun igGraphService() = getIgGraphSubdomainRetrofit().create(IgGraphService::class.java)

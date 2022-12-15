@@ -24,6 +24,9 @@ class InstagramService(
     ): IgServiceResult<IgShortLivedTokenResponse> =
         withContext(Dispatchers.IO) {
             try {
+                logger.debug { "Getting instagram short lived token with clientId: $clientId, " +
+                        "grant type: $grantType, redirectUri: $redirectUri, code: $code" }
+
                 val response = authService.getShortLivedToken(
                     clientId,
                     clientSecret,
@@ -40,7 +43,7 @@ class InstagramService(
                     IgServiceResult.ExpiredError
                 }
             } catch (e: Exception) {
-                logger.error(e) { "error getting short lived token from instagram" }
+                logger.error(e) { "exception getting short lived token from instagram" }
                 IgServiceResult.Unknown
             }
         }
