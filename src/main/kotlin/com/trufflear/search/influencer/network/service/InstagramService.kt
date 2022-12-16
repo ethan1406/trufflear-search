@@ -40,7 +40,7 @@ class InstagramService(
                 if (e.code() == 403) {
                     IgServiceResult.PermissionError
                 } else {
-                    IgServiceResult.ExpiredError
+                    IgServiceResult.Unknown
                 }
             } catch (e: Exception) {
                 logger.error(e) { "exception getting short lived token from instagram" }
@@ -61,7 +61,11 @@ class InstagramService(
                 IgServiceResult.Success(response)
             } catch (e: HttpException) {
                 logger.error(e) { "error getting long lived token from instagram" }
-                IgServiceResult.Unknown
+                if (e.code() == 403) {
+                    IgServiceResult.PermissionError
+                } else {
+                    IgServiceResult.Unknown
+                }
             } catch (e: Exception) {
                 logger.error(e) { "error getting long lived token from instagram" }
                 IgServiceResult.Unknown
@@ -122,8 +126,6 @@ sealed class IgServiceResult<out IgResult> {
     ): IgServiceResult<IgResult>()
 
     object PermissionError: IgServiceResult<Nothing>()
-
-    object ExpiredError: IgServiceResult<Nothing>()
 
     object Unknown: IgServiceResult<Nothing>()
 }

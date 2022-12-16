@@ -13,10 +13,6 @@ import com.trufflear.search.influencer.network.service.StorageService
 import com.trufflear.search.influencer.network.service.InstagramService
 import com.trufflear.search.influencer.repositories.InfluencerProfileRepository
 import com.trufflear.search.influencer.util.CaptionParser
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.withContext
 import mu.KLogger
 import mu.KotlinLogging
 
@@ -158,7 +154,6 @@ class IgHandlingService(
     internal sealed class Error {
         sealed class Instagram: Error() {
             object PermissionError: Instagram()
-            object ExpiredError: Instagram()
         }
 
         object Unknown: Error()
@@ -168,7 +163,6 @@ class IgHandlingService(
 internal fun IgServiceResult<Any>.toError(logger: KLogger): IgHandlingService.Error =
     when (this) {
         is IgServiceResult.Unknown -> IgHandlingService.Error.Unknown
-        is IgServiceResult.ExpiredError -> IgHandlingService.Error.Instagram.ExpiredError
         is IgServiceResult.PermissionError -> IgHandlingService.Error.Instagram.PermissionError
         is IgServiceResult.Success -> {
             logger.error { "IgService Result should not be converted to error in Connect Ig Service" }

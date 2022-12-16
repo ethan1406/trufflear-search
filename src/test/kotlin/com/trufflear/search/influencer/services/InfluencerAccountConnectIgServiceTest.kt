@@ -114,7 +114,7 @@ class InfluencerAccountConnectIgServiceTest {
         runBlocking<Unit>(InfluencerCoroutineElement(influencer)) {
             // ARRANGE
             whenever(instagramService.getShortLivedToken(any(), any(), any(), any(), eq(authCode)))
-                .thenReturn(IgServiceResult.ExpiredError)
+                .thenReturn(IgServiceResult.PermissionError)
 
             val request = connectIgUserMediaRequest {
                 instagramAuthCode = authCode
@@ -123,7 +123,7 @@ class InfluencerAccountConnectIgServiceTest {
             val exception = assertThrows<StatusException> { service.connectIgUserMedia(request) }
 
             // ASSERT
-            assertThat(exception.status).isEqualTo(Status.INVALID_ARGUMENT)
+            assertThat(exception.status).isEqualTo(Status.PERMISSION_DENIED)
             verify(instagramService).getShortLivedToken(any(), any(), any(), any(), eq(authCode))
         }
 

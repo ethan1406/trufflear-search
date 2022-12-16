@@ -63,8 +63,7 @@ class InfluencerAccountConnectIgService (
         )
 
         when (result) {
-            is IgServiceResult.PermissionError, IgServiceResult.ExpiredError,
-            IgServiceResult.Unknown -> handleError(result.toError(logger))
+            is IgServiceResult.PermissionError, IgServiceResult.Unknown -> handleError(result.toError(logger))
             is IgServiceResult.Success -> {
                 println("asdhfasd: ${result.response.accessToken}")
                 coroutineScope {
@@ -137,7 +136,6 @@ class InfluencerAccountConnectIgService (
             is IgHandlingService.Error.Unknown -> throw StatusException(Status.UNKNOWN)
             is IgHandlingService.Error.Instagram -> {
                 when (error) {
-                    is IgHandlingService.Error.Instagram.ExpiredError -> throw StatusException(Status.INVALID_ARGUMENT)
                     is IgHandlingService.Error.Instagram.PermissionError -> throw StatusException(Status.PERMISSION_DENIED)
                 }
             }
